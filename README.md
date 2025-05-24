@@ -40,7 +40,6 @@ This extension offers a rich set of features to enhance your Pug/Jade developmen
 *   **Dependency Tracking**: (Basic) The extension analyzes `include` and `extends` to understand file relationships. (Advanced visualization planned).
 *   **Create Pug File from Template**: Quickly scaffold new Pug files using predefined templates (accessible via context menu or command).
 *   **Find TODOs in Workspace**: A command to scan all Pug files in the current workspace for `TODO`, `FIXME`, or similar comment tags.
-*   **Compile Pug to HTML**: A command to compile the current Pug file to HTML (primarily for quick previews or simple use cases).
 *   **List File Dependencies**: A command to display the files that the current Pug file includes or extends.
 
 ### 💄 Formatting
@@ -75,7 +74,6 @@ Access these commands via the Command Palette (Ctrl+Shift+P):
 
 *   `Pug Support: Find TODOs in Workspace` (`pug-support.findTodos`): Scans all Pug files for TODO/FIXME comments.
 *   `Pug Support: Create Pug File from Template` (`pug-support.createFromTemplate`): Creates a new Pug file from a predefined template.
-*   `Pug Support: Compile Pug to HTML` (`pug-support.compileToHtml`): Compiles the current Pug file to HTML.
 *   `Pug Support: List File Dependencies` (`pug-support.listFileDependencies`): Shows includes/extends for the current file.
 *   `Pug: Format Pug Document` (`pug.format`): Formats the current Pug document (relies on Prettier).
 *   `Pug: Validate Pug Document` (`pug.validate`): Manually triggers validation for the current Pug document.
@@ -98,7 +96,6 @@ The extension includes a variety of snippets for common Pug/HTML patterns. Start
 
 *   **Complex Project Structures**: Path resolution for `include`/`extends` in very complex or unusually structured projects might have edge cases.
 *   **Performance**: For extremely large projects with thousands of Pug files, some features like workspace-wide symbol searching or reference finding might experience slight delays. Continuous optimizations are planned.
-*   **HTML Compilation**: The `Compile Pug to HTML` command is intended for basic preview and might not support all advanced Pug features or build pipeline integrations.
 *   **TypeScript Configuration in Dev**: Some minor TypeScript configuration warnings might appear during development mode of the extension itself.
 
 ## 🛣️ Roadmap / Future Work

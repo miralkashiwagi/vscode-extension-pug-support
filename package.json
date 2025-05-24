@@ -1,6 +1,7 @@
 {
   "name": "pug-support",
   "displayName": "Pug Support - Advanced",
+  "publisher": "test-publisher",
   "categories": [
     "Programming Languages",
     "Linters",
@@ -96,11 +97,6 @@
         "category": "Pug"
       },
       {
-        "command": "pug-support.compileToHtml",
-        "title": "Compile Pug to HTML",
-        "category": "Pug"
-      },
-      {
         "command": "pug-support.listFileDependencies",
         "title": "List File Dependencies",
         "category": "Pug"
@@ -115,11 +111,6 @@
         }
       ],
       "editor/context": [
-        {
-          "command": "pug-support.compileToHtml",
-          "when": "resourceExtname == .pug || resourceExtname == .jade",
-          "group": "navigation"
-        }
       ]
     }
   },

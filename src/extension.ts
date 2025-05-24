@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import * as prettier from 'prettier';
+// import * as prettier from 'prettier';
 import { PugDefinitionProvider } from './definitionProvider';
 import { completionProvider } from './completionProvider';
 import { createIndentationDiagnostics, updateIndentationDiagnostics } from './indentationDiagnostics';
@@ -134,36 +134,44 @@ const hoverProvider: vscode.HoverProvider = {
 };
 
 export function activate(context: vscode.ExtensionContext) {
+
+    console.log('Pug Support extension activating...');
+    console.log('context.extensionUri:', context.extensionUri);
+    console.log('context.extensionPath (deprecated but for check):', context.extensionPath);
+    console.log('vscode.workspace.workspaceFolders:', vscode.workspace.workspaceFolders);
+
+
+
     const PUG_MODE: vscode.DocumentFilter = { language: 'pug', scheme: 'file' };
     const JADE_MODE: vscode.DocumentFilter = { language: 'jade', scheme: 'file' };
 
     // Enhanced formatting provider
-    const formattingProvider = {
-        async provideDocumentFormattingEdits(document: vscode.TextDocument): Promise<vscode.TextEdit[]> {
-            const text = document.getText();
-            try {
-                const formattedText = await prettier.format(text, {
-                    parser: document.languageId === 'jade' ? 'pug' : document.languageId,
-                    plugins: ['@prettier/plugin-pug'],
-                    tabWidth: vscode.workspace.getConfiguration('editor', document.uri).get('tabSize', 2) as number,
-                    useTabs: !vscode.workspace.getConfiguration('editor', document.uri).get('insertSpaces', true),
-                });
-                const fullRange = new vscode.Range(
-                    document.positionAt(0),
-                    document.positionAt(text.length)
-                );
-                return [vscode.TextEdit.replace(fullRange, formattedText)];
-            } catch (error) {
-                console.error('Error formatting Pug/Jade document:', error);
-                vscode.window.showErrorMessage(`Error formatting ${document.languageId.toUpperCase()} document: ${error instanceof Error ? error.message : String(error)}`);
-                return [];
-            }
-        }
-    };
+    // const formattingProvider = {
+    //     async provideDocumentFormattingEdits(document: vscode.TextDocument): Promise<vscode.TextEdit[]> {
+    //         const text = document.getText();
+    //         try {
+    //             const formattedText = await prettier.format(text, {
+    //                 parser: document.languageId === 'jade' ? 'pug' : document.languageId,
+    //                 plugins: ['@prettier/plugin-pug'],
+    //                 tabWidth: vscode.workspace.getConfiguration('editor', document.uri).get('tabSize', 2) as number,
+    //                 useTabs: !vscode.workspace.getConfiguration('editor', document.uri).get('insertSpaces', true),
+    //             });
+    //             const fullRange = new vscode.Range(
+    //                 document.positionAt(0),
+    //                 document.positionAt(text.length)
+    //             );
+    //             return [vscode.TextEdit.replace(fullRange, formattedText)];
+    //         } catch (error) {
+    //             console.error('Error formatting Pug/Jade document:', error);
+    //             vscode.window.showErrorMessage(`Error formatting ${document.languageId.toUpperCase()} document: ${error instanceof Error ? error.message : String(error)}`);
+    //             return [];
+    //         }
+    //     }
+    // };
 
     // Register basic providers
-    context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(PUG_MODE, formattingProvider));
-    context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(JADE_MODE, formattingProvider));
+    // context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(PUG_MODE, formattingProvider));
+    // context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(JADE_MODE, formattingProvider));
 
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(PUG_MODE, completionProvider, ...['.', '#', ' ']));
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(JADE_MODE, completionProvider, ...['.', '#', ' ']));
@@ -289,34 +297,10 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    const compileToHtmlCommand = vscode.commands.registerCommand('pug-support.compileToHtml', async () => {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor || (editor.document.languageId !== 'pug' && editor.document.languageId !== 'jade')) {
-            vscode.window.showErrorMessage('Please open a Pug or Jade file first.');
-            return;
-        }
-
-        try {
-            const pug = require('pug-parser');
-            const pugLexer = require('pug-lexer');
-            
-            const text = editor.document.getText();
-            const tokens = pugLexer(text);
-            const ast = pug(tokens);
-            
-            // This is a simplified compilation - in a real implementation,
-            // you'd use the full Pug compiler
-            vscode.window.showInformationMessage('Pug compilation would be implemented here with full pug compiler.');
-        } catch (error) {
-            vscode.window.showErrorMessage(`Compilation failed: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    });
-
     context.subscriptions.push(
         findTodosCommand, 
         listFileDependenciesCommand,
-        createFromTemplateCommand,
-        compileToHtmlCommand
+        createFromTemplateCommand
     );
 }
 
