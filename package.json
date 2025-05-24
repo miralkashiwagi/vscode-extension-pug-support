@@ -1,13 +1,14 @@
 {
   "name": "pug-support",
-  "displayName": "Pug Support",
+  "displayName": "Pug Support - Advanced",
   "categories": [
     "Programming Languages",
     "Linters",
-    "Formatters"
+    "Formatters",
+    "Other"
   ],
-  "description": "Syntax highlighting, syntax checking, input aids, formatters",
-  "version": "0.0.1",
+  "description": "Advanced Pug/Jade language support with syntax highlighting, validation, refactoring, and intelligent features",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.100.0"
   },
@@ -27,7 +28,11 @@
         "extensions": [
           ".jade"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/jade.svg",
+          "dark": "./icons/jade.svg"
+        }
       },
       {
         "id": "pug",
@@ -38,7 +43,11 @@
         "extensions": [
           ".pug"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/pug.svg",
+          "dark": "./icons/pug.svg"
+        }
       }
     ],
     "grammars": [
@@ -51,6 +60,16 @@
         "language": "pug",
         "scopeName": "text.pug",
         "path": "./syntaxes/pug.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "pug",
+        "path": "./snippets/pug.json"
+      },
+      {
+        "language": "jade",
+        "path": "./snippets/pug.json"
       }
     ],
     "commands": [
@@ -68,10 +87,41 @@
       },
       {
         "command": "pug-support.findTodos",
-        "title": "Pug/Jade: Find TODOs in Workspace",
+        "title": "Find TODOs in Workspace",
+        "category": "Pug"
+      },
+      {
+        "command": "pug-support.createFromTemplate",
+        "title": "Create Pug File from Template",
+        "category": "Pug"
+      },
+      {
+        "command": "pug-support.compileToHtml",
+        "title": "Compile Pug to HTML",
+        "category": "Pug"
+      },
+      {
+        "command": "pug-support.listFileDependencies",
+        "title": "List File Dependencies",
         "category": "Pug"
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "pug-support.createFromTemplate",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "pug-support.compileToHtml",
+          "when": "resourceExtname == .pug || resourceExtname == .jade",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

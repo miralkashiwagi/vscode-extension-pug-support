@@ -130,12 +130,12 @@ export function getMixinDefinitions(mixinName: string): MixinDefinition[] | unde
 }
 
 export function getAllMixinNames(): string[] {
-    if (!isIndexReady) return [];
+    if (!isIndexReady) {return [];}
     return Array.from(mixinIndex.keys());
 }
 
 async function handleFileChange(uri: vscode.Uri) {
-    if (!uri.fsPath.endsWith('.pug')) return;
+    if (!uri.fsPath.endsWith('.pug')) {return;}
     console.log(`[MixinIndexer] File changed: ${uri.fsPath}, re-indexing it.`);
     
     mixinIndex.forEach((definitions, name) => {
@@ -162,7 +162,7 @@ async function handleFileChange(uri: vscode.Uri) {
 }
 
 function handleFileDelete(uri: vscode.Uri) {
-    if (!uri.fsPath.endsWith('.pug')) return;
+    if (!uri.fsPath.endsWith('.pug')) {return;}
     console.log(`[MixinIndexer] File deleted: ${uri.fsPath}, removing from index.`);
     mixinIndex.forEach((definitions, name) => {
         const filteredDefs = definitions.filter(def => def.uri.fsPath !== uri.fsPath);

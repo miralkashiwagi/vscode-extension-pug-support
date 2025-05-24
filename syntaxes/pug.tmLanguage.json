@@ -1,0 +1,217 @@
+{
+  "name": "Pug",
+  "scopeName": "text.pug",
+  "fileTypes": ["pug"],
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#doctype"
+    },
+    {
+      "include": "#filter"
+    },
+    {
+      "include": "#flow-control"
+    },
+    {
+      "include": "#mixin-declaration"
+    },
+    {
+      "include": "#mixin-call"
+    },
+    {
+      "include": "#tag"
+    },
+    {
+      "include": "#script-block"
+    },
+    {
+      "include": "#interpolation"
+    },
+    {
+      "include": "#plain-text"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.pug",
+          "match": "^\\s*//(?!-)(.*)"
+        },
+        {
+          "name": "comment.block.unbuffered.pug",
+          "begin": "^\\s*//-",
+          "end": "^(?!(\\s*//-|\\s*$))"
+        }
+      ]
+    },
+    "doctype": {
+      "name": "meta.doctype.pug",
+      "match": "^(doctype)(\\s+.+)?$",
+      "captures": {
+        "1": { "name": "keyword.other.doctype.pug" },
+        "2": { "name": "constant.language.doctype.pug" }
+      }
+    },
+    "filter": {
+      "name": "meta.filter.pug",
+      "begin": "^(\\s*):([\\w-]+)",
+      "beginCaptures": {
+        "2": { "name": "entity.name.function.pug" }
+      },
+      "end": "^(?!(\\s+)|$)",
+      "patterns": [
+        {
+          "match": ".",
+          "name": "string.unquoted.filter-content.pug"
+        }
+      ]
+    },
+    "flow-control": {
+      "patterns": [
+        {
+          "name": "meta.control.if.pug",
+          "match": "^\\s*(if|else if|else|unless)(\\s+|$)(.+)?$",
+          "captures": {
+            "1": { "name": "keyword.control.conditional.pug" },
+            "3": { "name": "source.js.embedded.pug" }
+          }
+        },
+        {
+          "name": "meta.control.each.pug",
+          "match": "^\\s*(each|for|while)(\\s+|$)(.+)?$",
+          "captures": {
+            "1": { "name": "keyword.control.loop.pug" },
+            "3": { "name": "source.js.embedded.pug" }
+          }
+        },
+        {
+          "name": "meta.control.case.pug",
+          "match": "^\\s*(case|when|default)(\\s+|$)(.+)?$",
+          "captures": {
+            "1": { "name": "keyword.control.conditional.pug" },
+            "3": { "name": "source.js.embedded.pug" }
+          }
+        }
+      ]
+    },
+    "mixin-declaration": {
+      "name": "meta.mixin.pug",
+      "match": "^\\s*(mixin)\\s+([\\w-]+)(?:\\s*\\((.*)\\))?$",
+      "captures": {
+        "1": { "name": "storage.type.function.pug" },
+        "2": { "name": "entity.name.function.pug" },
+        "3": { "name": "variable.parameter.function.pug" }
+      }
+    },
+    "mixin-call": {
+      "name": "meta.function-call.pug",
+      "match": "^\\s*(\\+)\\s*([\\w-]+)(?:\\s*\\((.*)\\))?$",
+      "captures": {
+        "1": { "name": "keyword.operator.pug" },
+        "2": { "name": "entity.name.function.pug" },
+        "3": { "name": "meta.function-call.arguments.pug" }
+      }
+    },
+    "tag": {
+      "patterns": [
+        {
+          "name": "meta.tag.pug",
+          "match": "^(\\s*)([\\w-]+)(?=\\s|\\.|\\#|\\(|$)",
+          "captures": {
+            "2": { "name": "entity.name.tag.pug" }
+          }
+        },
+        {
+          "name": "meta.tag.id.pug",
+          "match": "#([\\w-]+)",
+          "captures": {
+            "1": { "name": "entity.other.attribute-name.id.pug" }
+          }
+        },
+        {
+          "name": "meta.tag.class.pug",
+          "match": "\\.([\\w-]+)",
+          "captures": {
+            "1": { "name": "entity.other.attribute-name.class.pug" }
+          }
+        },
+        {
+          "name": "meta.tag.attributes.pug",
+          "begin": "\\(",
+          "end": "\\)",
+          "patterns": [
+            {
+              "match": "([\\w-]+)\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|(\\S+))",
+              "captures": {
+                "1": { "name": "entity.other.attribute-name.pug" },
+                "2": { "name": "string.quoted.double.pug" },
+                "3": { "name": "string.quoted.single.pug" },
+                "4": { "name": "string.unquoted.pug" }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "script-block": {
+      "name": "source.js.embedded.pug",
+      "begin": "^(\\s*)(-|=|!=)\\s+",
+      "beginCaptures": {
+        "2": { "name": "punctuation.section.embedded.pug" }
+      },
+      "end": "^(?!(\\1\\s+)|(\\s*$))",
+      "patterns": [
+        {
+          "include": "source.js"
+        }
+      ]
+    },
+    "interpolation": {
+      "patterns": [
+        {
+          "name": "meta.interpolation.pug",
+          "begin": "#{",
+          "beginCaptures": {
+            "0": { "name": "punctuation.section.embedded.pug" }
+          },
+          "end": "}",
+          "endCaptures": {
+            "0": { "name": "punctuation.section.embedded.pug" }
+          },
+          "patterns": [
+            {
+              "include": "source.js"
+            }
+          ]
+        },
+        {
+          "name": "meta.interpolation.unescaped.pug",
+          "begin": "!{",
+          "beginCaptures": {
+            "0": { "name": "punctuation.section.embedded.pug" }
+          },
+          "end": "}",
+          "endCaptures": {
+            "0": { "name": "punctuation.section.embedded.pug" }
+          },
+          "patterns": [
+            {
+              "include": "source.js"
+            }
+          ]
+        }
+      ]
+    },
+    "plain-text": {
+      "name": "text.plain.pug",
+      "match": "^\\s*\\|\\s*(.+)$",
+      "captures": {
+        "1": { "name": "string.unquoted.pug" }
+      }
+    }
+  }
+} 

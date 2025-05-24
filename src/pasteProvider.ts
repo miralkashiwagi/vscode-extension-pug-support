@@ -57,7 +57,7 @@ export class PugPasteProvider implements vscode.DocumentPasteEditProvider {
     // Corrected: Accept document instead of editorOptions
     private normalizeIndent(text: string, document: vscode.TextDocument, targetBaseIndentForNonPiped: string): string {
         const lines = text.split(/\r?\n/);
-        if (lines.length <= 1) return text.trimLeft();
+        if (lines.length <= 1) {return text.trimLeft();}
 
         // Corrected: Get editor settings from vscode.workspace.getConfiguration
         const editorConfig = vscode.workspace.getConfiguration('editor', document.uri);
@@ -68,33 +68,33 @@ export class PugPasteProvider implements vscode.DocumentPasteEditProvider {
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
-            if (line.trim() === '' && i === lines.length -1) continue; 
-            if (line.trim() === '' && i === 0) continue;
+            if (line.trim() === '' && i === lines.length -1) {continue;} 
+            if (line.trim() === '' && i === 0) {continue;}
 
             let currentIndentLength = 0;
             for (const char of line) {
-                if (char === ' ') currentIndentLength++;
-                else if (char === '\t') currentIndentLength += tabSize; 
-                else break;
+                if (char === ' ') {currentIndentLength++;}
+                else if (char === '\t') {currentIndentLength += tabSize;} 
+                else {break;}
             }
             minIndentLength = Math.min(minIndentLength, currentIndentLength);
         }
         
-        if (minIndentLength === Infinity) minIndentLength = 0;
+        if (minIndentLength === Infinity) {minIndentLength = 0;}
 
         return lines.map((line, index) => {
-            if (line.trim() === '' && index === lines.length -1 && lines.length > 1) return ''; 
+            if (line.trim() === '' && index === lines.length -1 && lines.length > 1) {return '';} 
             
             let currentIndentLength = 0;
             let contentStart = 0;
             for (let i = 0; i < line.length; i++) {
-                if (line[i] === ' ') currentIndentLength++;
-                else if (line[i] === '\t') currentIndentLength += tabSize;
+                if (line[i] === ' ') {currentIndentLength++;}
+                else if (line[i] === '\t') {currentIndentLength += tabSize;}
                 else {
                     contentStart = i;
                     break;
                 }
-                if (i === line.length - 1) contentStart = line.length; 
+                if (i === line.length - 1) {contentStart = line.length;} 
             }
 
             const relativeIndentLength = Math.max(0, currentIndentLength - minIndentLength);
