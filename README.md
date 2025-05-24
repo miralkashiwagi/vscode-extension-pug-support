@@ -1,71 +1,51 @@
-# pug-support README
+# Pug Support for VS Code
 
-This is the README for your extension "pug-support". After writing up a brief description, we recommend including the following sections.
+This extension provides enhanced language support for Pug (formerly Jade) files in Visual Studio Code. It aims to bring features found in other IDEs, such as the JetBrains Pug/Jade plugin, to the VS Code environment.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+Currently, the following features are implemented:
 
-For example if there is an image subfolder under your extension project workspace:
+*   **Syntax Highlighting**: Accurate syntax highlighting for both `.pug` and `.jade` files.
+*   **Indentation Validation**: Detects and warns about mixed tabs and spaces in indentation, helping maintain consistent code style.
+*   **Document Formatting**: Format your Pug/Jade files using Prettier and the `@prettier/plugin-pug` plugin.
+    *   To use: Right-click in a Pug/Jade file and select "Format Document" or use the shortcut (e.g., `Shift+Alt+F` on Windows, `Shift+Option+F` on macOS).
+*   **Code Completion**:
+    *   Basic auto-completion for common Pug keywords (e.g., `if`, `else`, `each`, `mixin`, `block`, `extends`, `include`).
+    *   Basic auto-completion for standard HTML tags.
+*   **Hover Information**: Get quick information about Pug keywords when you hover over them.
+*   **Definition Provider**: Jump to definition for `include` paths, `extends` paths, and `mixin` calls. Supports jumping to mixin definitions within the same file or in files included via the `include` directive.
+*   **TODO Indexing**: Finds and lists `TODO`/`FIXME` comments in Pug/Jade files. Use the command `Pug/Jade: Find TODOs in Workspace`.
 
-\!\[feature X\]\(images/feature-x.png\)
+## Installation
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+*(Instructions for installation will be added once the extension is ready for packaging or publishing. For now, if running from source, ensure all dependencies are installed by running `npm install` in the `pug-support` directory.)*
 
-## Requirements
+## Usage
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+*   **Formatting**: Open a `.pug` or `.jade` file, right-click and select "Format Document".
+*   **Indentation Warnings**: Errors regarding mixed tabs and spaces will appear in the "Problems" panel.
+*   **Completion**: Start typing Pug keywords or HTML tags, and suggestions will appear.
+*   **Hover**: Mouse over Pug keywords to see a brief description.
+*   **Go to Definition**: Place your cursor on an `include` path, `extends` path, or a `mixin` name and press `F12` (or right-click and select "Go to Definition").
 
-## Extension Settings
+## Known Issues & Limitations
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+*   Mixin definition jumping to mixins in **extended** files (via `extends`) is not yet supported. (Jumping to mixins in files included via the `include` directive is supported).
+*   Complex project structures with deeply nested includes/extends might have limitations in path resolution for definition jumping.
 
-For example:
+## Future Work
 
-This extension contributes the following settings:
+The following features are planned for future releases, drawing inspiration from the JetBrains IDE Jade/Pug plugin:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+*   **File Dependency Management**: Tracking dependencies between Pug files (e.g., for build tools or advanced navigation).
+*   **Template Support**: Enhanced support for working with Pug as a templating engine, potentially including live previews or integration with template data.
+*   **More comprehensive code completion**: Including attributes, mixin parameters, etc.
 
-## Known Issues
+## Contributing
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+*(Contribution guidelines will be added later.)*
 
-## Release Notes
+## License
 
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+*(License information will be added later.)*
