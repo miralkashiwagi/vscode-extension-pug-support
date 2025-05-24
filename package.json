@@ -101,7 +101,8 @@
     "@vscode/test-electron": "^2.5.2",
     "prettier": "^3.0.0",
     "@prettier/plugin-pug": "^3.0.0",
-    "@types/prettier": "^2.7.0"
+    "@types/prettier": "^2.7.0",
+    "@types/pug": "^2.0.10"
   },
   "dependencies": {
     "pug-lexer": "^5.0.1",

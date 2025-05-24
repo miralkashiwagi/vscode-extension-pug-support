@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { getMixinDefinitions, MixinDefinition } from './mixinIndexer';
 
 export class PugDefinitionProvider implements vscode.DefinitionProvider {
     private async findMixinDefinitionInIncludedFiles(document: vscode.TextDocument, mixinName: string): Promise<vscode.Location[]> {
@@ -134,17 +135,31 @@ export class PugDefinitionProvider implements vscode.DefinitionProvider {
             const mixinName = mixinCallMatch[1];
             const callNameStartIndex = lineText.indexOf(mixinName, lineText.indexOf('+') + 1);
             const callNameEndIndex = callNameStartIndex + mixinName.length;
+
             if (position.character >= callNameStartIndex && position.character <= callNameEndIndex) {
+                // ★ 1. Try to find in the index first
+                const indexedDefinitions = getMixinDefinitions(mixinName);
+                if (indexedDefinitions && indexedDefinitions.length > 0) {
+                    return indexedDefinitions.map(def => new vscode.Location(def.uri, def.range));
+                }
+
+                // ★ 2. Fallback to current file search
                 for (let i = 0; i < document.lineCount; i++) {
                     const potentialDefinitionLine = document.lineAt(i).text;
                     const mixinDefinitionRegex = new RegExp(`^\s*mixin\s+${mixinName}(?:\s*\(.*\))?`);
                     if (potentialDefinitionLine.match(mixinDefinitionRegex)) {
-                        return new vscode.Location(document.uri, new vscode.Position(i, 0));
+                        // For current file, create a range for the mixin name itself
+                        const defNameStartIndex = potentialDefinitionLine.indexOf(mixinName, potentialDefinitionLine.indexOf('mixin') + 5);
+                        const defNameEndIndex = defNameStartIndex + mixinName.length;
+                        const range = new vscode.Range(i, defNameStartIndex, i, defNameEndIndex);
+                        return new vscode.Location(document.uri, range);
                     }
                 }
+
+                // ★ 3. Fallback to included files search (existing logic)
                 const includedDefinitions = await this.findMixinDefinitionInIncludedFiles(document, mixinName);
                 if (includedDefinitions.length > 0) {
-                    return includedDefinitions;
+                    return includedDefinitions; // These are already vscode.Location[]
                 }
             }
         }
@@ -156,13 +171,15 @@ export class PugDefinitionProvider implements vscode.DefinitionProvider {
             const defNameStartIndex = lineText.indexOf(mixinName, lineText.indexOf('mixin') + 5);
             const defNameEndIndex = defNameStartIndex + mixinName.length;
             if (position.character >= defNameStartIndex && position.character <= defNameEndIndex) {
-                return new vscode.Location(document.uri, new vscode.Position(position.line, 0));
+                 // For mixin definition itself, return its location
+                const range = new vscode.Range(position.line, defNameStartIndex, position.line, defNameEndIndex);
+                return new vscode.Location(document.uri, range);
             }
         }
 
         const wordRange = document.getWordRangeAtPosition(position);
         const word = wordRange ? document.getText(wordRange) : '';
-        console.log(`${document.languageId.toUpperCase()} definition provider called for '${word}' (no specific handler found) at ${document.uri.fsPath}:${position.line}:${position.character}`);
+        // console.log(`${document.languageId.toUpperCase()} definition provider called for '${word}' (no specific handler found) at ${document.uri.fsPath}:${position.line}:${position.character}`);
         return null;
     }
 }

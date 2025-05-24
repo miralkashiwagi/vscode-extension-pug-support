@@ -5,6 +5,8 @@ import { completionProvider } from './completionProvider';
 import { createIndentationDiagnostics, updateIndentationDiagnostics } from './indentationDiagnostics';
 import { findTodosInWorkspace } from './todoIndexer';
 import { getDirectDependencies } from './PugDependencyResolver';
+import { PugPasteProvider } from './pasteProvider';
+import { activateMixinIndexer } from './mixinIndexer';
 
 // Output channel utility
 let todoOutputChannel: vscode.OutputChannel | undefined;
@@ -89,6 +91,18 @@ export function activate(context: vscode.ExtensionContext) {
     }));
     context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(event => updateDiagnostics(event.document)));
     context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(doc => diagnostics.delete(doc.uri)));
+
+    // Register Paste Provider
+    const pasteProvider = new PugPasteProvider();
+    context.subscriptions.push(
+        vscode.languages.registerDocumentPasteEditProvider({ language: 'pug' }, pasteProvider, {
+            pasteMimeTypes: ['text/plain'],
+            providedPasteEditKinds: [vscode.DocumentDropOrPasteEditKind.Text]
+        })
+    );
+
+    // Activate Mixin Indexer
+    activateMixinIndexer(context);
 
     const findTodosCommand = vscode.commands.registerCommand('pug-support.findTodos', async () => {
         await findTodosInWorkspace(getTodoOutputChannel);
