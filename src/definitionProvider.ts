@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import { getMixinDefinitions, MixinDefinition } from './mixinIndexer';
 
 export class PugDefinitionProvider implements vscode.DefinitionProvider {
-    private async findMixinDefinitionInIncludedFiles(document: vscode.TextDocument, mixinName: string): Promise<vscode.Location[]> {
+    private async findMixinDefinitionInIncludedFiles(document: vscode.TextDocument, mixinName: string, searchedFiles: Set<string> = new Set()): Promise<vscode.Location[]> {
         const locations: vscode.Location[] = [];
         const currentDocText = document.getText();
         const includeRegex = /^\s*include\s+([^\s]+)/gm;
@@ -38,19 +38,38 @@ export class PugDefinitionProvider implements vscode.DefinitionProvider {
 
             if (finalUri) {
                 const includedFileUri = finalUri;
+                if (searchedFiles.has(includedFileUri.fsPath)) {
+                    console.log(`[PugDefinitionProvider] Already searched ${includedFileUri.fsPath}, skipping.`);
+                    continue;
+                }
+                searchedFiles.add(includedFileUri.fsPath);
+
                 promises.push(
                     (async () => {
                         try {
+                            console.log(`[PugDefinitionProvider] Searching for mixin '${mixinName}' in included file: ${includedFileUri.fsPath}`);
                             const includedDoc = await vscode.workspace.openTextDocument(includedFileUri);
-                            const includedDocumentLines = includedDoc.getText().split(/\r?\n/);
-                            const mixinDefinitionRegex = new RegExp(`^mixin\\s+${mixinName}(?:\\s|\\(|$)`);
+                            const includedText = includedDoc.getText();
+                            const includedDocumentLines = includedText.split(/\r?\n/);
+                            
+                            // Allow leading whitespace for mixin definitions
+                            const mixinDefinitionRegex = new RegExp('^\\s*mixin\\s+' + mixinName + '(?:\\s|\\(|$)');
+                            // console.log(`[PugDefinitionProvider] Regex for ${mixinName}: ${mixinDefinitionRegex}`); // Logged by caller or can be re-enabled if needed
                             for (let i = 0; i < includedDocumentLines.length; i++) {
-                                if (mixinDefinitionRegex.test(includedDocumentLines[i])) {
+                                const currentLineText = includedDocumentLines[i];
+                                // console.log(`[PugDefinitionProvider] Checking line ${i} in ${includedFileUri.fsPath}: "${currentLineText}"`); // Can be noisy, re-enable if needed
+                                if (mixinDefinitionRegex.test(currentLineText)) {
+                                    console.log(`[PugDefinitionProvider] Found mixin '${mixinName}' at line ${i} in ${includedFileUri.fsPath}`);
                                     locations.push(new vscode.Location(includedFileUri, new vscode.Position(i, 0)));
                                 }
                             }
+
+                            // Recursively search in further included files
+                            const nestedLocations = await this.findMixinDefinitionInIncludedFiles(includedDoc, mixinName, searchedFiles);
+                            locations.push(...nestedLocations);
+
                         } catch (e: any) {
-                            console.error(`Error reading or parsing included file ${includedFileUri.fsPath}:`, e);
+                            console.error(`[PugDefinitionProvider] Error reading or parsing included file ${includedFileUri.fsPath}:`, e);
                         }
                     })()
                 );
@@ -91,7 +110,7 @@ export class PugDefinitionProvider implements vscode.DefinitionProvider {
                         return new vscode.Location(vscode.Uri.file(resolvedPath), new vscode.Position(0, 0));
                     }
                 } catch (error) {
-                    console.log(`File not found for include: ${resolvedPath}`, error);
+                    console.log(`[PugDefinitionProvider] File not found for include: ${resolvedPath}`, error);
                     return null;
                 }
             }
@@ -123,7 +142,7 @@ export class PugDefinitionProvider implements vscode.DefinitionProvider {
                         return new vscode.Location(vscode.Uri.file(resolvedPath), new vscode.Position(0, 0));
                     }
                 } catch (error) {
-                    console.log(`File not found for extends: ${resolvedPath}`, error);
+                    console.log(`[PugDefinitionProvider] File not found for extends: ${resolvedPath}`, error);
                     return null;
                 }
             }
@@ -133,6 +152,7 @@ export class PugDefinitionProvider implements vscode.DefinitionProvider {
         const mixinCallMatch = lineText.match(mixinCallRegex);
         if (mixinCallMatch) {
             const mixinName = mixinCallMatch[1];
+            console.log(`[PugDefinitionProvider] Mixin call found: '${mixinName}' at ${document.uri.fsPath}:${position.line}`);
             const callNameStartIndex = lineText.indexOf(mixinName, lineText.indexOf('+') + 1);
             const callNameEndIndex = callNameStartIndex + mixinName.length;
 
@@ -140,8 +160,10 @@ export class PugDefinitionProvider implements vscode.DefinitionProvider {
                 // ★ 1. Try to find in the index first
                 const indexedDefinitions = getMixinDefinitions(mixinName);
                 if (indexedDefinitions && indexedDefinitions.length > 0) {
+                    console.log(`[PugDefinitionProvider] Found mixin '${mixinName}' in index:`, indexedDefinitions.map(d => d.uri.fsPath));
                     return indexedDefinitions.map(def => new vscode.Location(def.uri, def.range));
                 }
+                console.log(`[PugDefinitionProvider] Mixin '${mixinName}' not found in index. Searching current file...`);
 
                 // ★ 2. Fallback to current file search
                 for (let i = 0; i < document.lineCount; i++) {
@@ -152,15 +174,21 @@ export class PugDefinitionProvider implements vscode.DefinitionProvider {
                         const defNameStartIndex = potentialDefinitionLine.indexOf(mixinName, potentialDefinitionLine.indexOf('mixin') + 5);
                         const defNameEndIndex = defNameStartIndex + mixinName.length;
                         const range = new vscode.Range(i, defNameStartIndex, i, defNameEndIndex);
+                        console.log(`[PugDefinitionProvider] Found mixin '${mixinName}' in current file.`);
                         return new vscode.Location(document.uri, range);
                     }
                 }
+                console.log(`[PugDefinitionProvider] Mixin '${mixinName}' not found in current file. Searching included files...`);
 
                 // ★ 3. Fallback to included files search (existing logic)
-                const includedDefinitions = await this.findMixinDefinitionInIncludedFiles(document, mixinName);
+                const searchedFiles = new Set<string>();
+                searchedFiles.add(document.uri.fsPath); // Add current document to avoid re-searching it if included by itself (though unlikely for mixin search)
+                const includedDefinitions = await this.findMixinDefinitionInIncludedFiles(document, mixinName, searchedFiles);
                 if (includedDefinitions.length > 0) {
+                    console.log(`[PugDefinitionProvider] Found mixin '${mixinName}' in included files:`, includedDefinitions.map(loc => loc.uri.fsPath));
                     return includedDefinitions; // These are already vscode.Location[]
                 }
+                console.log(`[PugDefinitionProvider] Mixin '${mixinName}' not found in included files.`);
             }
         }
 
