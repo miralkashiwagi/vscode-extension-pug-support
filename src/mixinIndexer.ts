@@ -1,3 +1,4 @@
+console.log('[Pug MixinIndexer] mixinIndexer.ts top of file');
 import * as vscode from 'vscode';
 import lex from 'pug-lexer';
 import { parse, Node as PugNode, Mixin as PugMixinNode, Block as PugBlockNode } from 'pug-parser';

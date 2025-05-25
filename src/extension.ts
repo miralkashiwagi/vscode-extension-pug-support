@@ -1,3 +1,4 @@
+console.log('[Pug Extension] extension.ts top of file');
 import * as vscode from 'vscode';
 // import * as prettier from 'prettier';
 import { PugDefinitionProvider } from './definitionProvider';
@@ -14,6 +15,7 @@ import { PugReferenceProvider } from './pugReferenceProvider';
 import { PugDocumentHighlightProvider } from './pugHighlightProvider';
 import { PugFoldingRangeProvider } from './pugFoldingProvider';
 import { PugSignatureHelpProvider } from './pugSignatureHelpProvider';
+console.log('[Pug Extension] extension.ts after all imports');
 
 // Output channel utility
 let todoOutputChannel: vscode.OutputChannel | undefined;
@@ -134,6 +136,9 @@ const hoverProvider: vscode.HoverProvider = {
 };
 
 export function activate(context: vscode.ExtensionContext) {
+    console.log('[Pug Activate] Extension activation started.');
+    console.log('[Pug Activate] Context extensionUri:', context.extensionUri?.fsPath);
+    console.log('[Pug Activate] Workspace folders:', vscode.workspace.workspaceFolders?.map(f => f.uri.fsPath));
 
     console.log('Pug Support extension activating...');
     console.log('context.extensionUri:', context.extensionUri);
@@ -146,32 +151,44 @@ export function activate(context: vscode.ExtensionContext) {
     const JADE_MODE: vscode.DocumentFilter = { language: 'jade', scheme: 'file' };
 
     // Enhanced formatting provider
-    // const formattingProvider = {
-    //     async provideDocumentFormattingEdits(document: vscode.TextDocument): Promise<vscode.TextEdit[]> {
-    //         const text = document.getText();
-    //         try {
-    //             const formattedText = await prettier.format(text, {
-    //                 parser: document.languageId === 'jade' ? 'pug' : document.languageId,
-    //                 plugins: ['@prettier/plugin-pug'],
-    //                 tabWidth: vscode.workspace.getConfiguration('editor', document.uri).get('tabSize', 2) as number,
-    //                 useTabs: !vscode.workspace.getConfiguration('editor', document.uri).get('insertSpaces', true),
-    //             });
-    //             const fullRange = new vscode.Range(
-    //                 document.positionAt(0),
-    //                 document.positionAt(text.length)
-    //             );
-    //             return [vscode.TextEdit.replace(fullRange, formattedText)];
-    //         } catch (error) {
-    //             console.error('Error formatting Pug/Jade document:', error);
-    //             vscode.window.showErrorMessage(`Error formatting ${document.languageId.toUpperCase()} document: ${error instanceof Error ? error.message : String(error)}`);
-    //             return [];
-    //         }
-    //     }
-    // };
+    const formattingProvider = {
+        async provideDocumentFormattingEdits(document: vscode.TextDocument): Promise<vscode.TextEdit[]> {
+            const text = document.getText();
+            try {
+                console.log(`[Pug FormattingProvider] Formatting document: ${document.uri.fsPath}`);
+                console.log(`[Pug FormattingProvider] Original text length: ${text.length}`);
+                console.log(`[Pug FormattingProvider] Language ID: ${document.languageId}`);
+                const tabWidth = vscode.workspace.getConfiguration('editor', document.uri).get('tabSize', 2) as number;
+                const useTabs = !(vscode.workspace.getConfiguration('editor', document.uri).get('insertSpaces', true) as boolean);
+                console.log(`[Pug FormattingProvider] Options - tabWidth: ${tabWidth}, useTabs: ${useTabs}`);
+
+                // const { format } = await import('prettier');
+                // const prettierPluginPug = await import('@prettier/plugin-pug');
+                // const formattedText = await format(text, {
+                //     parser: document.languageId === 'jade' ? 'pug' : document.languageId,
+                //     plugins: [prettierPluginPug],
+                //     tabWidth: tabWidth,
+                //     useTabs: useTabs,
+                //     filepath: document.uri.fsPath
+                // });
+                // console.log(`[Pug FormattingProvider] Formatted text length: ${formattedText.length}`);
+                // const fullRange = new vscode.Range(
+                //     document.positionAt(0),
+                //     document.positionAt(text.length)
+                // );
+                // return [vscode.TextEdit.replace(fullRange, formattedText)];
+                return []; // Prettier無効化中
+            } catch (error) {
+                console.error('Error during Pug/Jade formatting with prettier.format:', error);
+                vscode.window.showErrorMessage(`Error formatting ${document.languageId.toUpperCase()} document with Prettier: ${error instanceof Error ? error.message : String(error)}`);
+                return [];
+            }
+        }
+    };
 
     // Register basic providers
-    // context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(PUG_MODE, formattingProvider));
-    // context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(JADE_MODE, formattingProvider));
+    context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(PUG_MODE, formattingProvider));
+    context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(JADE_MODE, formattingProvider));
 
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(PUG_MODE, completionProvider, ...['.', '#', ' ']));
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(JADE_MODE, completionProvider, ...['.', '#', ' ']));
@@ -213,7 +230,9 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.languages.registerSignatureHelpProvider(JADE_MODE, signatureHelpProvider, '(', ','));
 
     // Initialize file watcher for automatic path updates
+    console.log('[Pug Activate] Initializing PugFileWatcher...');
     fileWatcher = new PugFileWatcher();
+    console.log('[Pug Activate] PugFileWatcher initialized.');
     context.subscriptions.push(fileWatcher);
 
     // Register diagnostics
@@ -241,19 +260,25 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     // Activate Mixin Indexer
+    console.log('[Pug Activate] Calling activateMixinIndexer...');
     activateMixinIndexer(context);
+    console.log('[Pug Activate] activateMixinIndexer finished.');
 
     // Register commands
-    const findTodosCommand = vscode.commands.registerCommand('pug-support.findTodos', async () => {
+    const findTodosCommand = vscode.commands.registerCommand('pug.findTodos', async () => {
+        console.log('[Pug Command] pug.findTodos invoked.');
         await findTodosInWorkspace(getTodoOutputChannel);
     });
 
-    const listFileDependenciesCommand = vscode.commands.registerCommand('pug-support.listFileDependencies', async () => {
+    const listFileDependenciesCommand = vscode.commands.registerCommand('pug.listFileDependencies', async () => {
+        console.log('[Pug Command] pug.listFileDependencies invoked.');
         const editor = vscode.window.activeTextEditor;
         if (editor) {
             const document = editor.document;
             if (document.languageId === 'pug' || document.languageId === 'jade') {
-                const dependencies = await getDirectDependencies(document);
+                console.log('[Pug Command] pug.listFileDependencies - Calling getDirectDependencies for:', editor.document.uri.fsPath);
+                const dependencies = await getDirectDependencies(document); // Pass the document object
+                console.log('[Pug Command] pug.listFileDependencies - getDirectDependencies returned:', dependencies);
                 getTodoOutputChannel().clear();
                 getTodoOutputChannel().show(true);
                 getTodoOutputChannel().appendLine(`Direct dependencies for ${vscode.workspace.asRelativePath(document.uri)}:`);
@@ -272,24 +297,40 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    const createFromTemplateCommand = vscode.commands.registerCommand('pug-support.createFromTemplate', async () => {
+    const createFromTemplateCommand = vscode.commands.registerCommand('pug.createFromTemplate', async () => {
+        console.log('[Pug Command] pug.createFromTemplate invoked.');
         const templatePath = vscode.Uri.joinPath(context.extensionUri, 'templates', 'basic.pug');
         try {
-            const templateContent = await vscode.workspace.fs.readFile(templatePath);
-            const templateText = Buffer.from(templateContent).toString('utf8');
-            
-            const fileName = await vscode.window.showInputBox({
-                prompt: 'Enter file name (without extension)',
-                value: 'untitled'
-            });
-            
-            if (fileName) {
-                const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-                if (workspaceFolder) {
-                    const newFilePath = vscode.Uri.joinPath(workspaceFolder.uri, `${fileName}.pug`);
-                    await vscode.workspace.fs.writeFile(newFilePath, Buffer.from(templateText, 'utf8'));
-                    const document = await vscode.workspace.openTextDocument(newFilePath);
-                    await vscode.window.showTextDocument(document);
+            console.log('[Pug Command] pug.createFromTemplate - Finding template files...');
+            const templateFiles = await vscode.workspace.findFiles('**/*.pug', '**/node_modules/**', 100);
+            console.log('[Pug Command] pug.createFromTemplate - Found template files:', templateFiles.map(f => f.fsPath));
+            const templateQuickPickItems = templateFiles.map(uri => ({ label: vscode.workspace.asRelativePath(uri), detail: uri.fsPath, uri }));
+            console.log('[Pug Command] pug.createFromTemplate - Template quick pick items:', templateQuickPickItems);
+            const selectedTemplateUri = await vscode.window.showQuickPick(
+                templateQuickPickItems,
+                { placeHolder: 'Select a Pug template to create a new file from' }
+            );
+            console.log('[Pug Command] pug.createFromTemplate - Selected template URI:', selectedTemplateUri?.uri?.fsPath);
+            if (selectedTemplateUri && selectedTemplateUri.uri) {
+                const fileName = await vscode.window.showInputBox({
+                    prompt: 'Enter file name (without extension)',
+                    value: 'untitled'
+                });
+                if (fileName) {
+                    const workspaceFolder = vscode.workspace.getWorkspaceFolder(selectedTemplateUri.uri) || vscode.workspace.workspaceFolders?.[0];
+                    console.log('[Pug Command] pug.createFromTemplate - Determined workspace folder:', workspaceFolder?.uri.fsPath);
+                    if (workspaceFolder) {
+                        const newFileName = `${fileName}.pug`;
+                        const newFilePath = vscode.Uri.joinPath(workspaceFolder.uri, newFileName);
+                        console.log('[Pug Command] pug.createFromTemplate - New file path to create:', newFilePath.fsPath);
+                        console.log(`[Pug Command] pug.createFromTemplate - Copying from ${selectedTemplateUri.uri.fsPath} to ${newFilePath.fsPath}`);
+                        await vscode.workspace.fs.copy(selectedTemplateUri.uri, newFilePath, { overwrite: false });
+                        const document = await vscode.workspace.openTextDocument(newFilePath);
+                        await vscode.window.showTextDocument(document);
+                    } else {
+                        console.error('[Pug Command] pug.createFromTemplate - Could not determine a workspace folder to create the file in.');
+                        vscode.window.showErrorMessage('Could not determine a workspace folder to create the new Pug file.');
+                    }
                 }
             }
         } catch (error) {
