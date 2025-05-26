@@ -224,7 +224,7 @@ export class PugSignatureHelpProvider implements vscode.SignatureHelpProvider {
             }
             
             // Add .pug extension if not present
-            if (!resolvedPath.endsWith('.pug') && !resolvedPath.endsWith('.jade')) {
+            if (!resolvedPath.endsWith('.pug')) {
                 resolvedPath += '.pug';
             }
             

@@ -22,11 +22,10 @@ export async function getDirectDependencies(document: vscode.TextDocument): Prom
         const relativePath = match[1];
         let resolvedPath = path.resolve(documentDir, relativePath);
 
-        // Try to resolve path with .pug, .jade, or no extension
+        // Try to resolve path with .pug, or no extension
         const potentialPaths = [
             resolvedPath,
-            resolvedPath + '.pug',
-            resolvedPath + '.jade'
+            resolvedPath + '.pug'
         ];
 
         let foundPath: string | undefined;

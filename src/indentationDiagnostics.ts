@@ -5,7 +5,7 @@ export function createIndentationDiagnostics(): vscode.DiagnosticCollection {
 }
 
 export function updateIndentationDiagnostics(document: vscode.TextDocument, diagnostics: vscode.DiagnosticCollection): void {
-    if (document && (document.languageId === 'pug' || document.languageId === 'jade')) {
+    if (document && (document.languageId === 'pug')) {
         const diags: vscode.Diagnostic[] = [];
         const text = document.getText();
         

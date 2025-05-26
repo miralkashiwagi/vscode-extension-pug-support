@@ -7,7 +7,7 @@ export class PugFileWatcher {
 
     constructor() {
         // Watch for file moves, renames, and deletions
-        this.fileWatcher = vscode.workspace.createFileSystemWatcher('**/*.{pug,jade}');
+        this.fileWatcher = vscode.workspace.createFileSystemWatcher('**/*.pug');
         
         this.fileWatcher.onDidCreate(this.onFileCreated, this, this.disposables);
         this.fileWatcher.onDidDelete(this.onFileDeleted, this, this.disposables);
@@ -28,7 +28,7 @@ export class PugFileWatcher {
 
     private async onFilesRenamed(event: vscode.FileRenameEvent): Promise<void> {
         for (const file of event.files) {
-            if (file.oldUri.fsPath.endsWith('.pug') || file.oldUri.fsPath.endsWith('.jade')) {
+            if (file.oldUri.fsPath.endsWith('.pug')) {
                 await this.updateFileReferences(file.oldUri, file.newUri);
             }
         }
@@ -46,8 +46,8 @@ export class PugFileWatcher {
         const oldPathWithoutExt = this.removeExtension(oldRelativePath);
         const newPathWithoutExt = this.removeExtension(newRelativePath);
 
-        // Find all Pug/Jade files that might reference the moved file
-        const pugFiles = await vscode.workspace.findFiles('**/*.{pug,jade}', '**/node_modules/**');
+        // Find all Pug files that might reference the moved file
+        const pugFiles = await vscode.workspace.findFiles('**/*.pug', '**/node_modules/**');
         const workspaceEdit = new vscode.WorkspaceEdit();
 
         for (const fileUri of pugFiles) {
@@ -177,7 +177,7 @@ export class PugFileWatcher {
         const deletedRelativePath = path.relative(workspaceFolder.uri.fsPath, deletedUri.fsPath);
         const deletedPathWithoutExt = this.removeExtension(deletedRelativePath);
 
-        const pugFiles = await vscode.workspace.findFiles('**/*.{pug,jade}', '**/node_modules/**');
+        const pugFiles = await vscode.workspace.findFiles('**/*.pug', '**/node_modules/**');
         const brokenReferences: Array<{ file: vscode.Uri; line: number; text: string }> = [];
 
         for (const fileUri of pugFiles) {

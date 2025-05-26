@@ -105,8 +105,8 @@ export class PugRenameProvider implements vscode.RenameProvider {
         
         const workspaceEdit = new vscode.WorkspaceEdit();
         
-        // Find all Pug/Jade files in the workspace
-        const pugFiles = await vscode.workspace.findFiles('**/*.{pug,jade}', '**/node_modules/**');
+        // Find all Pug files in the workspace
+        const pugFiles = await vscode.workspace.findFiles('**/*.pug', '**/node_modules/**');
         
         for (const fileUri of pugFiles) {
             const doc = await vscode.workspace.openTextDocument(fileUri);
@@ -168,7 +168,7 @@ export class PugRenameProvider implements vscode.RenameProvider {
         workspaceEdit.replace(document.uri, range, newPath);
         
         // Find all files that might reference this file
-        const pugFiles = await vscode.workspace.findFiles('**/*.{pug,jade}', '**/node_modules/**');
+        const pugFiles = await vscode.workspace.findFiles('**/*.pug', '**/node_modules/**');
         
         for (const fileUri of pugFiles) {
             if (fileUri.toString() === document.uri.toString()) {

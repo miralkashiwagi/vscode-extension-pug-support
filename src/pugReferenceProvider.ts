@@ -72,8 +72,8 @@ export class PugReferenceProvider implements vscode.ReferenceProvider {
         
         const locations: vscode.Location[] = [];
         
-        // Find all Pug/Jade files in workspace
-        const pugFiles = await vscode.workspace.findFiles('**/*.{pug,jade}', '**/node_modules/**');
+        // Find all Pug files in workspace
+        const pugFiles = await vscode.workspace.findFiles('**/*.pug', '**/node_modules/**');
         
         for (const fileUri of pugFiles) {
             try {
@@ -137,8 +137,8 @@ export class PugReferenceProvider implements vscode.ReferenceProvider {
         
         const locations: vscode.Location[] = [];
         
-        // Find all Pug/Jade files in workspace
-        const pugFiles = await vscode.workspace.findFiles('**/*.{pug,jade}', '**/node_modules/**');
+        // Find all Pug files in workspace
+        const pugFiles = await vscode.workspace.findFiles('**/*.pug', '**/node_modules/**');
         
         for (const fileUri of pugFiles) {
             try {

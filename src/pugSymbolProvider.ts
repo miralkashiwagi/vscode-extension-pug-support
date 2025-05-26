@@ -118,8 +118,8 @@ export class PugWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvide
         
         const symbols: vscode.SymbolInformation[] = [];
         
-        // Find all Pug/Jade files in workspace
-        const pugFiles = await vscode.workspace.findFiles('**/*.{pug,jade}', '**/node_modules/**');
+        // Find all Pug files in workspace
+        const pugFiles = await vscode.workspace.findFiles('**/*.pug', '**/node_modules/**');
         
         for (const fileUri of pugFiles) {
             if (token.isCancellationRequested) {

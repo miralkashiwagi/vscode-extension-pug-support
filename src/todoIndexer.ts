@@ -3,21 +3,20 @@ import * as vscode from 'vscode';
 export async function findTodosInWorkspace(getTodoOutputChannel: () => vscode.OutputChannel) {
     getTodoOutputChannel().clear();
     getTodoOutputChannel().show(true);
-    getTodoOutputChannel().appendLine('Searching for TODOs and FIXMEs in workspace .pug and .jade files...');
+    getTodoOutputChannel().appendLine('Searching for TODOs and FIXMEs in workspace .pug files...');
 
     const pugFiles = await vscode.workspace.findFiles('**/*.pug', '**/node_modules/**');
-    const jadeFiles = await vscode.workspace.findFiles('**/*.jade', '**/node_modules/**');
-    const allPugJadeFiles = [...pugFiles, ...jadeFiles];
+    const allPugFiles = [...pugFiles];
 
-    if (allPugJadeFiles.length === 0) {
-        getTodoOutputChannel().appendLine('No .pug or .jade files found in the workspace.');
+    if (allPugFiles.length === 0) {
+        getTodoOutputChannel().appendLine('No .pug files found in the workspace.');
         return;
     }
 
     let totalTodos = 0;
     const todoRegex = /(?:\/\/\-\s*(TODO|FIXME)|\/\/\s*(TODO|FIXME)):(.*)/gi;
 
-    for (const fileUri of allPugJadeFiles) {
+    for (const fileUri of allPugFiles) {
         try {
             const document = await vscode.workspace.openTextDocument(fileUri);
             const text = document.getText();

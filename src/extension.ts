@@ -21,7 +21,7 @@ console.log('[Pug Extension] extension.ts after all imports');
 let todoOutputChannel: vscode.OutputChannel | undefined;
 function getTodoOutputChannel(): vscode.OutputChannel {
     if (!todoOutputChannel) {
-        todoOutputChannel = vscode.window.createOutputChannel('Pug/Jade TODOs');
+        todoOutputChannel = vscode.window.createOutputChannel('Pug TODOs');
     }
     return todoOutputChannel;
 }
@@ -35,7 +35,7 @@ const hoverProvider: vscode.HoverProvider = {
         const range = document.getWordRangeAtPosition(position);
         if (!range) { return null; }
         const word = document.getText(range);
-        // よく使われるPug/Jadeキーワードに簡単な説明を返す
+        // よく使われるPugキーワードに簡単な説明を返す
         switch(word) {
             case 'mixin':
                 return new vscode.Hover([
@@ -70,7 +70,7 @@ const hoverProvider: vscode.HoverProvider = {
                 ]);
             case 'extends':
                 return new vscode.Hover([
-                    '**extends**: 他のPug/Jadeテンプレートを継承します。',
+                    '**extends**: 他のPugテンプレートを継承します。',
                     '',
                     '```pug',
                     'extends ./layout',
@@ -148,7 +148,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 
     const PUG_MODE: vscode.DocumentFilter = { language: 'pug', scheme: 'file' };
-    const JADE_MODE: vscode.DocumentFilter = { language: 'jade', scheme: 'file' };
 
     // Enhanced formatting provider
     const formattingProvider = {
@@ -165,7 +164,7 @@ export function activate(context: vscode.ExtensionContext) {
                 const { format } = await import('prettier');
                 const prettierPluginPug = await import('@prettier/plugin-pug');
                 const formattedText = await format(text, {
-                    parser: document.languageId === 'jade' ? 'pug' : document.languageId,
+                    parser: document.languageId === 'pug' ? 'pug' : document.languageId,
                     plugins: [prettierPluginPug],
                     tabWidth: tabWidth,
                     useTabs: useTabs,
@@ -178,7 +177,7 @@ export function activate(context: vscode.ExtensionContext) {
                 );
                 return [vscode.TextEdit.replace(fullRange, formattedText)];
             } catch (error) {
-                console.error('Error during Pug/Jade formatting with prettier.format:', error);
+                console.error('Error during Pug formatting with prettier.format:', error);
                 vscode.window.showErrorMessage(`Error formatting ${document.languageId.toUpperCase()} document with Prettier: ${error instanceof Error ? error.message : String(error)}`);
                 return [];
             }
@@ -187,46 +186,34 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Register basic providers
     context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(PUG_MODE, formattingProvider));
-    context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(JADE_MODE, formattingProvider));
-
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(PUG_MODE, completionProvider, ...['.', '#', ' ']));
-    context.subscriptions.push(vscode.languages.registerCompletionItemProvider(JADE_MODE, completionProvider, ...['.', '#', ' ']));
-
     context.subscriptions.push(vscode.languages.registerHoverProvider(PUG_MODE, hoverProvider));
-    context.subscriptions.push(vscode.languages.registerHoverProvider(JADE_MODE, hoverProvider));
 
     const pugDefinitionProviderInstance = new PugDefinitionProvider();
     context.subscriptions.push(vscode.languages.registerDefinitionProvider(PUG_MODE, pugDefinitionProviderInstance));
-    context.subscriptions.push(vscode.languages.registerDefinitionProvider(JADE_MODE, pugDefinitionProviderInstance));
 
     // Register advanced language features
     const renameProvider = new PugRenameProvider();
     context.subscriptions.push(vscode.languages.registerRenameProvider(PUG_MODE, renameProvider));
-    context.subscriptions.push(vscode.languages.registerRenameProvider(JADE_MODE, renameProvider));
 
     // Register NEW basic language features
     const documentSymbolProvider = new PugDocumentSymbolProvider();
     context.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(PUG_MODE, documentSymbolProvider));
-    context.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(JADE_MODE, documentSymbolProvider));
 
     const workspaceSymbolProvider = new PugWorkspaceSymbolProvider();
     context.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(workspaceSymbolProvider));
 
     const referenceProvider = new PugReferenceProvider();
     context.subscriptions.push(vscode.languages.registerReferenceProvider(PUG_MODE, referenceProvider));
-    context.subscriptions.push(vscode.languages.registerReferenceProvider(JADE_MODE, referenceProvider));
 
     const documentHighlightProvider = new PugDocumentHighlightProvider();
     context.subscriptions.push(vscode.languages.registerDocumentHighlightProvider(PUG_MODE, documentHighlightProvider));
-    context.subscriptions.push(vscode.languages.registerDocumentHighlightProvider(JADE_MODE, documentHighlightProvider));
 
     const foldingRangeProvider = new PugFoldingRangeProvider();
     context.subscriptions.push(vscode.languages.registerFoldingRangeProvider(PUG_MODE, foldingRangeProvider));
-    context.subscriptions.push(vscode.languages.registerFoldingRangeProvider(JADE_MODE, foldingRangeProvider));
 
     const signatureHelpProvider = new PugSignatureHelpProvider();
     context.subscriptions.push(vscode.languages.registerSignatureHelpProvider(PUG_MODE, signatureHelpProvider, '(', ','));
-    context.subscriptions.push(vscode.languages.registerSignatureHelpProvider(JADE_MODE, signatureHelpProvider, '(', ','));
 
     // Initialize file watcher for automatic path updates
     console.log('[Pug Activate] Initializing PugFileWatcher...');
@@ -274,7 +261,7 @@ export function activate(context: vscode.ExtensionContext) {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
             const document = editor.document;
-            if (document.languageId === 'pug' || document.languageId === 'jade') {
+            if (document.languageId === 'pug') {
                 console.log('[Pug Command] pug.listFileDependencies - Calling getDirectDependencies for:', editor.document.uri.fsPath);
                 const dependencies = await getDirectDependencies(document); // Pass the document object
                 console.log('[Pug Command] pug.listFileDependencies - getDirectDependencies returned:', dependencies);
@@ -289,7 +276,7 @@ export function activate(context: vscode.ExtensionContext) {
                     getTodoOutputChannel().appendLine('  No direct dependencies found.');
                 }
             } else {
-                vscode.window.showInformationMessage('This command can only be run on a Pug or Jade file.');
+                vscode.window.showInformationMessage('This command can only be run on a Pug file.');
             }
         } else {
             vscode.window.showInformationMessage('No active editor found.');

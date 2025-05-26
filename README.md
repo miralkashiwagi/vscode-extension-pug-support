@@ -1,13 +1,13 @@
 # Pug Support - Advanced for VS Code
 
-This extension provides comprehensive, professional-grade language support for Pug (formerly Jade) files in Visual Studio Code. Inspired by the powerful features found in JetBrains IDEs' Pug/Jade plugins, this extension aims to bring a similar level of advanced functionality and developer experience to VS Code users working with Pug/Jade.
+This extension provides comprehensive, professional-grade language support for Pug (formerly Jade) files in Visual Studio Code. Inspired by the powerful features found in JetBrains IDEs' Pug plugins, this extension aims to bring a similar level of advanced functionality and developer experience to VS Code users working with Pug.
 
 ## ✨ Key Features
 
-This extension offers a rich set of features to enhance your Pug/Jade development workflow:
+This extension offers a rich set of features to enhance your Pug development workflow:
 
 ### 🎨 Enhanced Language Support
-*   **Advanced Syntax Highlighting**: Accurate and detailed syntax highlighting for both `.pug` and `.jade` files, including robust support for interpolations.
+*   **Advanced Syntax Highlighting**: Accurate and detailed syntax highlighting for both `.pug` files, including robust support for interpolations.
 *   **Intelligent Code Completion**: Context-aware autocompletion for Pug keywords, HTML tags, CSS class names (based on project files), and defined mixins.
 *   **Rich Hover Information**: Display detailed documentation and examples for Pug constructs on hover.
 *   **Smart Snippets**: A collection of useful code snippets for common Pug patterns and HTML structures, accelerating development (`package.json` lists over 15 built-in snippets).
@@ -61,7 +61,7 @@ Alternatively, for development or testing:
 
 ## 📖 Usage Guide
 
-Once installed, the extension automatically activates when you open a `.pug` or `.jade` file.
+Once installed, the extension automatically activates when you open a `.pug` file.
 
 *   **Navigation**: Use `F12` (Go to Definition), `Shift+F12` (Find All References), `Ctrl+Shift+O` (Document Outline), and `Ctrl+T` (Workspace Symbols).
 *   **Intelligent Assistance**: Autocompletion will trigger as you type. Hover over Pug elements for more information. Signature help appears when you type `(` after a mixin name.
@@ -129,7 +129,7 @@ This project is licensed under the MIT License - see the `LICENSE` file for deta
 
 ## 🙏 Acknowledgments
 
-*   Inspired by the excellent Pug/Jade support in **JetBrains IDEs** (like WebStorm, IntelliJ IDEA).
+*   Inspired by the excellent Pug support in **JetBrains IDEs** (like WebStorm, IntelliJ IDEA).
 *   Relies heavily on the official **`pug-lexer`** and **`pug-parser`** libraries from the Pug.js team.
 *   Thanks to the **VS Code team** for their powerful extension APIs and comprehensive documentation.
 *   Gratitude to the **Pug.js community** for maintaining and evolving the Pug language.
