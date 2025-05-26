@@ -50,10 +50,6 @@
     ],
     "commands": [
       {
-        "command": "pug-support.helloWorld",
-        "title": "Hello World"
-      },
-      {
         "command": "pug.format",
         "title": "Format Pug Document"
       },
