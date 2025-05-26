@@ -1,6 +1,6 @@
 console.log('[Pug Extension] extension.ts top of file');
 import * as vscode from 'vscode';
-// import * as prettier from 'prettier';
+import * as prettier from 'prettier';
 import { PugDefinitionProvider } from './definitionProvider';
 import { completionProvider } from './completionProvider';
 import { createIndentationDiagnostics, updateIndentationDiagnostics } from './indentationDiagnostics';
@@ -162,22 +162,21 @@ export function activate(context: vscode.ExtensionContext) {
                 const useTabs = !(vscode.workspace.getConfiguration('editor', document.uri).get('insertSpaces', true) as boolean);
                 console.log(`[Pug FormattingProvider] Options - tabWidth: ${tabWidth}, useTabs: ${useTabs}`);
 
-                // const { format } = await import('prettier');
-                // const prettierPluginPug = await import('@prettier/plugin-pug');
-                // const formattedText = await format(text, {
-                //     parser: document.languageId === 'jade' ? 'pug' : document.languageId,
-                //     plugins: [prettierPluginPug],
-                //     tabWidth: tabWidth,
-                //     useTabs: useTabs,
-                //     filepath: document.uri.fsPath
-                // });
-                // console.log(`[Pug FormattingProvider] Formatted text length: ${formattedText.length}`);
-                // const fullRange = new vscode.Range(
-                //     document.positionAt(0),
-                //     document.positionAt(text.length)
-                // );
-                // return [vscode.TextEdit.replace(fullRange, formattedText)];
-                return []; // Prettier無効化中
+                const { format } = await import('prettier');
+                const prettierPluginPug = await import('@prettier/plugin-pug');
+                const formattedText = await format(text, {
+                    parser: document.languageId === 'jade' ? 'pug' : document.languageId,
+                    plugins: [prettierPluginPug],
+                    tabWidth: tabWidth,
+                    useTabs: useTabs,
+                    filepath: document.uri.fsPath
+                });
+                console.log(`[Pug FormattingProvider] Formatted text length: ${formattedText.length}`);
+                const fullRange = new vscode.Range(
+                    document.positionAt(0),
+                    document.positionAt(text.length)
+                );
+                return [vscode.TextEdit.replace(fullRange, formattedText)];
             } catch (error) {
                 console.error('Error during Pug/Jade formatting with prettier.format:', error);
                 vscode.window.showErrorMessage(`Error formatting ${document.languageId.toUpperCase()} document with Prettier: ${error instanceof Error ? error.message : String(error)}`);
