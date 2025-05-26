@@ -8,33 +8,17 @@
     "Formatters",
     "Other"
   ],
-  "description": "Advanced Pug/Jade language support with syntax highlighting, validation, refactoring, and intelligent features",
+  "description": "Advanced Pug language support with syntax highlighting, validation, refactoring, and intelligent features",
   "version": "0.1.0",
   "engines": {
     "vscode": "^1.100.0"
   },
   "activationEvents": [
-    "onFile:pug",
-    "onFile:jade"
+    "onFile:pug"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "languages": [
-      {
-        "id": "jade",
-        "aliases": [
-          "Jade",
-          "jade"
-        ],
-        "extensions": [
-          ".jade"
-        ],
-        "configuration": "./language-configuration.json",
-        "icon": {
-          "light": "./icons/jade.svg",
-          "dark": "./icons/jade.svg"
-        }
-      },
       {
         "id": "pug",
         "aliases": [
@@ -53,11 +37,6 @@
     ],
     "grammars": [
       {
-        "language": "jade",
-        "scopeName": "text.jade",
-        "path": "./syntaxes/jade.tmLanguage.json"
-      },
-      {
         "language": "pug",
         "scopeName": "text.pug",
         "path": "./syntaxes/pug.tmLanguage.json"
@@ -66,10 +45,6 @@
     "snippets": [
       {
         "language": "pug",
-        "path": "./snippets/pug.json"
-      },
-      {
-        "language": "jade",
         "path": "./snippets/pug.json"
       }
     ],
