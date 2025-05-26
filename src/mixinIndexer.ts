@@ -1,4 +1,3 @@
-console.log('[Pug MixinIndexer] mixinIndexer.ts top of file');
 import * as vscode from 'vscode';
 import lex from 'pug-lexer';
 const parsePug = require('pug-parser');
@@ -93,7 +92,6 @@ async function parsePugContent(content: string, uri: vscode.Uri): Promise<MixinD
 export async function buildMixinIndex(context: vscode.ExtensionContext): Promise<void> {
     mixinIndex.clear();
     isIndexReady = false;
-    console.log('[MixinIndexer] Starting to build mixin index...');
 
     const pugFiles = await vscode.workspace.findFiles('**/*.pug', '**/node_modules/**');
 
@@ -121,12 +119,10 @@ export async function buildMixinIndex(context: vscode.ExtensionContext): Promise
     });
 
     isIndexReady = true;
-    console.log(`[MixinIndexer] Mixin index built. Found mixins for ${mixinIndex.size} unique names.`);
 }
 
 export function getMixinDefinitions(mixinName: string): MixinDefinition[] | undefined {
     if (!isIndexReady) {
-        // console.warn('[MixinIndexer] Index is not ready yet.'); // Can be noisy
         return undefined; 
     }
     return mixinIndex.get(mixinName);
@@ -139,7 +135,6 @@ export function getAllMixinNames(): string[] {
 
 async function handleFileChange(uri: vscode.Uri) {
     if (!uri.fsPath.endsWith('.pug')) {return;}
-    console.log(`[MixinIndexer] File changed: ${uri.fsPath}, re-indexing it.`);
     
     mixinIndex.forEach((definitions, name) => {
         const filteredDefs = definitions.filter(def => def.uri.fsPath !== uri.fsPath);
@@ -158,7 +153,6 @@ async function handleFileChange(uri: vscode.Uri) {
             existing.push(def);
             mixinIndex.set(def.name, existing);
         }
-        console.log(`[MixinIndexer] Re-indexed ${definitions.length} mixins from ${uri.fsPath}.`);
     } catch (error) {
         console.error(`[MixinIndexer] Error re-indexing file ${uri.fsPath} after change:`, error);
     }
@@ -166,7 +160,6 @@ async function handleFileChange(uri: vscode.Uri) {
 
 function handleFileDelete(uri: vscode.Uri) {
     if (!uri.fsPath.endsWith('.pug')) {return;}
-    console.log(`[MixinIndexer] File deleted: ${uri.fsPath}, removing from index.`);
     mixinIndex.forEach((definitions, name) => {
         const filteredDefs = definitions.filter(def => def.uri.fsPath !== uri.fsPath);
         if (filteredDefs.length === 0) {
@@ -189,7 +182,6 @@ export function activateMixinIndexer(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('pug.rebuildMixinIndex', () => {
-            console.log('[MixinIndexer] Manual rebuild triggered.');
             buildMixinIndex(context);
         })
     );

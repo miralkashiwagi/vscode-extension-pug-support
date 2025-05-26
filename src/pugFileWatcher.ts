@@ -18,7 +18,6 @@ export class PugFileWatcher {
 
     private async onFileCreated(uri: vscode.Uri): Promise<void> {
         // Handle new file creation if needed
-        console.log(`Pug file created: ${uri.fsPath}`);
     }
 
     private async onFileDeleted(uri: vscode.Uri): Promise<void> {
