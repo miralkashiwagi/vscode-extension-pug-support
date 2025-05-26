@@ -140,6 +140,8 @@ export function activate(context: vscode.ExtensionContext) {
     const PUG_MODE: vscode.DocumentFilter = { language: 'pug', scheme: 'file' };
 
     // Enhanced formatting provider
+    // --- PrettierによるPugフォーマット機能（コメントアウト中） ---
+    /*
     const formattingProvider = {
         async provideDocumentFormattingEdits(document: vscode.TextDocument): Promise<vscode.TextEdit[]> {
             const text = document.getText();
@@ -168,9 +170,11 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }
     };
+    */
+
 
     // Register basic providers
-    context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(PUG_MODE, formattingProvider));
+    // context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(PUG_MODE, formattingProvider)); // ← Prettierフォーマット一時無効化
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(PUG_MODE, completionProvider, ...['.', '#', ' ']));
     context.subscriptions.push(vscode.languages.registerHoverProvider(PUG_MODE, hoverProvider));
 

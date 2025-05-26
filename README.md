@@ -34,9 +34,6 @@ This extension offers a rich set of features to enhance your Pug development wor
 *   **File Watcher**: Monitors Pug files for changes (e.g., new mixin definitions, file renames) and updates its internal understanding of the project to keep features like "Go to Definition" accurate.
 *   **Dependency Tracking**: The extension analyzes `include` and `extends` to understand file relationships.
 
-### 💄 Formatting
-*   **Document Formatting**: Integrates with Prettier (if installed and configured with `@prettier/plugin-pug`) to format Pug documents according to your Prettier configuration (`Shift+Alt+F` or context menu).
-
 ### 🛠️ Advanced Features
 *   **Paste Provider**: Enhanced paste functionality with automatic Pug formatting and pipe syntax handling.
 *   **Mixin Indexer**: Workspace-wide mixin indexing for fast symbol resolution.
@@ -49,6 +46,9 @@ This extension offers a rich set of features to enhance your Pug development wor
 ## 🚧 Planned Features (Future Implementation)
 
 The following features are planned for future releases:
+
+### 💄 Formatting
+*   **Document Formatting**: Integrates with Prettier (if installed and configured with `@prettier/plugin-pug`) to format Pug documents according to your Prettier configuration (`Shift+Alt+F` or context menu).
 
 ### 💡 Advanced Validation & Analysis
 *   **Real-time Validation**: Enhanced syntax checking using official `pug-lexer` and `pug-parser` for more accurate error reporting.
