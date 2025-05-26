@@ -1,7 +1,9 @@
 console.log('[Pug MixinIndexer] mixinIndexer.ts top of file');
 import * as vscode from 'vscode';
 import lex from 'pug-lexer';
-import { parse, Node as PugNode, Mixin as PugMixinNode, Block as PugBlockNode } from 'pug-parser';
+const parsePug = require('pug-parser');
+// Keep type imports if they are correctly defined as named exports in pug-parser.d.ts
+import { Node as PugNode, Mixin as PugMixinNode, Block as PugBlockNode } from 'pug-parser';
 
 export interface MixinDefinition {
     name: string;
@@ -80,7 +82,7 @@ function findMixinDefinitionsInAst(ast: PugNode, documentUri: vscode.Uri): Mixin
 async function parsePugContent(content: string, uri: vscode.Uri): Promise<MixinDefinition[]> {
     try {
         const tokens = lex(content, { filename: uri.fsPath });
-        const ast = parse(tokens, { filename: uri.fsPath });
+        const ast = parsePug(tokens, { filename: uri.fsPath });
         return findMixinDefinitionsInAst(ast, uri);
     } catch (error: any) {
         console.error(`[MixinIndexer] Error parsing Pug file ${uri.fsPath}: ${error.message}`);
