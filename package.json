@@ -7,14 +7,40 @@
     "Other"
   ],
   "description": "Advanced Pug language features (Go to Definition, References, Rename, etc.) using extension-based detection - No language conflicts",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "engines": {
-    "vscode": "^1.97.2"
+    "vscode": "^1.92.0"
   },
   "activationEvents": [
     "onStartupFinished"
   ],
   "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "pug.pasteWithFormatting",
+        "title": "Paste with Pug Formatting"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "pug.pasteWithFormatting",
+        "key": "ctrl+shift+v",
+        "mac": "cmd+shift+v",
+        "when": "editorTextFocus && resourceExtname == .pug"
+      }
+    ],
+
+    "menus": {
+      "editor/context": [
+        {
+          "command": "pug.pasteWithFormatting",
+          "when": "resourceExtname == .pug",
+          "group": "9_cutcopypaste"
+        }
+      ]
+    }
+  },
   "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "npm run check-types && npm run lint && node esbuild.js",
@@ -33,7 +59,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/pug": "^2.0.10",
-    "@types/vscode": "^1.97.2",
+    "@types/vscode": "^1.92.0",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.1",
     "@vscode/test-cli": "^0.0.10",

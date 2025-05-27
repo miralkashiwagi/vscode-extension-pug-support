@@ -4,7 +4,7 @@ import { completionProvider } from './completionProvider';
 import { createIndentationDiagnostics, updateIndentationDiagnostics } from './indentationDiagnostics';
 import { findTodosInWorkspace } from './todoIndexer';
 import { getDirectDependencies } from './PugDependencyResolver';
-import { PugPasteProvider } from './pasteProvider';
+import { PugPasteHandler } from './pasteProvider';
 import { activateMixinIndexer } from './mixinIndexer';
 import { PugRenameProvider } from './pugRenameProvider';
 import { PugFileWatcher } from './pugFileWatcher';
@@ -238,14 +238,9 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }));
 
-    // Register Paste Provider with multiple filters
-    const pasteProvider = new PugPasteProvider();
-    registeredProviders.push(
-        vscode.languages.registerDocumentPasteEditProvider(PUG_FILTERS, pasteProvider, {
-            pasteMimeTypes: ['text/plain'],
-            providedPasteEditKinds: [vscode.DocumentDropOrPasteEditKind.Text]
-        })
-    );
+    // Register Paste Handler
+    const pasteHandler = new PugPasteHandler();
+    context.subscriptions.push(pasteHandler);
 
     // Activate Mixin Indexer
     activateMixinIndexer(context);

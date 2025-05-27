@@ -1,79 +1,103 @@
 import * as vscode from "vscode";
 
-export class PugPasteProvider implements vscode.DocumentPasteEditProvider {
-  async provideDocumentPasteEdits(
-    document: vscode.TextDocument,
-    ranges: readonly vscode.Range[],
-    dataTransfer: vscode.DataTransfer,
-    context: vscode.DocumentPasteEditContext, // Corrected: Added context parameter
-    token: vscode.CancellationToken
-  ): Promise<vscode.DocumentPasteEdit[] | undefined> {
-    const pastedText = await dataTransfer.get("text/plain")?.asString();
-    if (!pastedText || token.isCancellationRequested) {
-      return;
-    }
+export class PugPasteHandler {
+  private disposables: vscode.Disposable[] = [];
 
-    const edits: vscode.DocumentPasteEdit[] = [];
+  constructor() {
+    // カスタムペーストコマンドを登録
+    const command = vscode.commands.registerTextEditorCommand(
+      'pug.pasteWithFormatting',
+      this.handlePasteWithFormatting.bind(this)
+    );
+    this.disposables.push(command);
+  }
 
-    for (const range of ranges) {
-      const lineAtCursor = document.lineAt(range.start.line);
+  private async handlePasteWithFormatting(
+    textEditor: vscode.TextEditor,
+    edit: vscode.TextEditorEdit
+  ) {
+    try {
+      // クリップボードからテキストを取得
+      const clipboardText = await vscode.env.clipboard.readText();
+      
+      if (!clipboardText) {
+        return;
+      }
+
+      const selection = textEditor.selection;
+      const document = textEditor.document;
+      
+      // Pugファイルかどうかチェック
+      if (!this.isPugFile(document)) {
+        // Pugファイルでない場合は通常のペーストを実行
+        const workspaceEdit = new vscode.WorkspaceEdit();
+        workspaceEdit.replace(document.uri, selection, clipboardText);
+        await vscode.workspace.applyEdit(workspaceEdit);
+        return;
+      }
+
+      // 現在の行とカーソル位置を取得
+      const lineAtCursor = document.lineAt(selection.start.line);
       const textBeforeCursorOnLine = lineAtCursor.text.substring(
         0,
-        range.start.character
+        selection.start.character
       );
       const trimmedTextBeforeCursor = textBeforeCursorOnLine.trimRight();
 
-      let baseIndent = lineAtCursor.text.substring(
+      // パイプ記法のコンテキストかどうかチェック
+      const pipeMatch = /\|\s*$/.exec(trimmedTextBeforeCursor);
+      
+      // パイプコンテキストでない場合は、通常のテキスト挿入
+      if (!pipeMatch) {
+        const workspaceEdit = new vscode.WorkspaceEdit();
+        workspaceEdit.replace(document.uri, selection, clipboardText);
+        await vscode.workspace.applyEdit(workspaceEdit);
+        return;
+      }
+
+      // パイプコンテキストの場合のみカスタムフォーマットを適用
+      // 現在の行の基本インデント（パイプより前の部分）を取得
+      const baseIndent = lineAtCursor.text.substring(
         0,
         lineAtCursor.firstNonWhitespaceCharacterIndex
       );
-      let prefixForPipedText = "";
-      let isPipedContext = false;
 
-      const pipeMatch = /\|\s*$/.exec(trimmedTextBeforeCursor);
-      if (pipeMatch) {
-        isPipedContext = true;
-        baseIndent = textBeforeCursorOnLine.substring(
-          0,
-          textBeforeCursorOnLine.lastIndexOf("|") + 1
-        );
-        prefixForPipedText = " ";
-      }
+      const prefixForPipedText = " ";
 
-      // Corrected: Pass document to normalizeIndent
+      // テキストのインデントを正規化
       const normalizedPastedText = this.normalizeIndent(
-        pastedText,
+        clipboardText,
         document,
-        isPipedContext ? baseIndent + prefixForPipedText : baseIndent
+        baseIndent + "|" + prefixForPipedText
       );
       const lines = normalizedPastedText.split(/\r?\n/);
 
       let resultText = "";
       if (lines.length === 1) {
-        resultText = (isPipedContext ? prefixForPipedText : "") + lines[0];
+        resultText = prefixForPipedText + lines[0];
       } else {
-        resultText = (isPipedContext ? prefixForPipedText : "") + lines[0];
+        resultText = prefixForPipedText + lines[0];
         for (let i = 1; i < lines.length; i++) {
-          resultText +=
-            "\n" + (isPipedContext ? "|" + prefixForPipedText : "|") + lines[i];
+          resultText += "\n" + baseIndent + "|" + prefixForPipedText + lines[i];
         }
       }
 
-      // Corrected: Set title in constructor
-      const title = isPipedContext
-        ? "Paste with Pug Pipe Formatting"
-        : "Paste Pug Content";
-      const pasteEdit = new vscode.DocumentPasteEdit(
-        resultText,
-        title,
-        vscode.DocumentDropOrPasteEditKind.Text
-      );
-      edits.push(pasteEdit);
+      // WorkspaceEditを使用してフォーマット済みテキストを挿入
+      const workspaceEdit = new vscode.WorkspaceEdit();
+      workspaceEdit.replace(document.uri, selection, resultText);
+      await vscode.workspace.applyEdit(workspaceEdit);
+    } catch (error) {
+      console.error('Error in Pug paste formatting:', error);
+      // エラーが発生した場合は、クリップボードの内容をそのまま挿入
+      const clipboardText = await vscode.env.clipboard.readText();
+      if (clipboardText) {
+        const workspaceEdit = new vscode.WorkspaceEdit();
+        workspaceEdit.replace(textEditor.document.uri, textEditor.selection, clipboardText);
+        await vscode.workspace.applyEdit(workspaceEdit);
+      }
     }
-    return edits;
   }
 
-  // Corrected: Accept document instead of editorOptions
   private normalizeIndent(
     text: string,
     document: vscode.TextDocument,
@@ -84,7 +108,7 @@ export class PugPasteProvider implements vscode.DocumentPasteEditProvider {
       return text.trimLeft();
     }
 
-    // Corrected: Get editor settings from vscode.workspace.getConfiguration
+    // エディター設定を取得
     const editorConfig = vscode.workspace.getConfiguration(
       "editor",
       document.uri
@@ -162,5 +186,13 @@ export class PugPasteProvider implements vscode.DocumentPasteEditProvider {
         return newIndentStr + line.substring(contentStart);
       })
       .join("\n");
+  }
+
+  private isPugFile(document: vscode.TextDocument): boolean {
+    return document.languageId === 'pug' || document.fileName.endsWith('.pug');
+  }
+
+  dispose() {
+    this.disposables.forEach(d => d.dispose());
   }
 }
