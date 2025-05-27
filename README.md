@@ -2,6 +2,8 @@
 
 This extension provides comprehensive, professional-grade language support for Pug (formerly Jade) files in Visual Studio Code. Inspired by the powerful features found in JetBrains IDEs' Pug plugins, this extension aims to bring a similar level of advanced functionality and developer experience to VS Code users working with Pug.
 
+**⚠️ Important Note**: This extension uses **extension-based detection** (`.pug` files) instead of language ID registration to **completely eliminate conflicts** with other Pug extensions. It provides advanced language features only and relies on existing Pug extensions for syntax highlighting and formatting.
+
 ## ✨ Key Features (Currently Implemented)
 
 This extension offers a rich set of features to enhance your Pug development workflow:
@@ -48,7 +50,7 @@ This extension offers a rich set of features to enhance your Pug development wor
 The following features are planned for future releases:
 
 ### 💄 Formatting
-*   **Document Formatting**: Integrates with Prettier (if installed and configured with `@prettier/plugin-pug`) to format Pug documents according to your Prettier configuration (`Shift+Alt+F` or context menu).
+*   **Document Formatting**: This extension intentionally does not provide formatting functionality to avoid conflicts with existing Pug formatters. Use your preferred formatter extension (e.g., Prettier with `@prettier/plugin-pug`).
 
 ### 💡 Advanced Validation & Analysis
 *   **Real-time Validation**: Enhanced syntax checking using official `pug-lexer` and `pug-parser` for more accurate error reporting.
@@ -85,7 +87,7 @@ Once installed, the extension automatically activates when you open a `.pug` fil
 
 Access these commands via the Command Palette (Ctrl+Shift+P):
 
-*   **Format Document** (`Shift+Alt+F` or right-click menu): Formats the current Pug document using Prettier.
+*   **Format Document**: This extension does not provide formatting to avoid conflicts with existing Pug formatters. Use your preferred Pug formatter extension (e.g., Prettier with @prettier/plugin-pug).
 *   **Find TODOs in Workspace**: Scans all Pug files for TODO/FIXME comments.
 *   **List File Dependencies**: Shows includes/extends for the current file.
 *   **Create Pug File from Template**: Creates a new Pug file from a predefined template.
@@ -96,7 +98,7 @@ The extension generally respects your global VS Code editor settings for:
 *   **Tab Size**
 *   **Insert Spaces**
 
-For document formatting, it relies on your project's Prettier configuration if Prettier and `@prettier/plugin-pug` are set up.
+This extension does not provide formatting functionality to ensure compatibility with existing Pug formatters. Install and configure your preferred Pug formatter separately (e.g., Prettier with `@prettier/plugin-pug`).
 
 ## 📋 Code Snippets
 

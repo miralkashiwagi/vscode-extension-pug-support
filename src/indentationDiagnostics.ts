@@ -5,7 +5,8 @@ export function createIndentationDiagnostics(): vscode.DiagnosticCollection {
 }
 
 export function updateIndentationDiagnostics(document: vscode.TextDocument, diagnostics: vscode.DiagnosticCollection): void {
-    if (document && (document.languageId === 'pug')) {
+    // Note: Language ID check removed - caller is responsible for filtering Pug files
+    if (document) {
         const diags: vscode.Diagnostic[] = [];
         const text = document.getText();
         

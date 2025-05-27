@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import * as prettier from 'prettier';
 import { PugDefinitionProvider } from './definitionProvider';
 import { completionProvider } from './completionProvider';
 import { createIndentationDiagnostics, updateIndentationDiagnostics } from './indentationDiagnostics';
@@ -26,10 +25,26 @@ function getTodoOutputChannel(): vscode.OutputChannel {
 
 // Global instances for cleanup
 let fileWatcher: PugFileWatcher | undefined;
+let registeredProviders: vscode.Disposable[] = [];
+
+// Pug file detection utility
+function isPugFile(document: vscode.TextDocument): boolean {
+    return document.fileName.endsWith('.pug');
+}
+
+function isPugUri(uri: vscode.Uri): boolean {
+    return uri.fsPath.endsWith('.pug');
+}
+
+// Utility functions for Pug file detection
 
 // シンプルな Hover Provider
 const hoverProvider: vscode.HoverProvider = {
     provideHover(document, position, token) {
+        if (!isPugFile(document)) {
+            return null;
+        }
+        
         const range = document.getWordRangeAtPosition(position);
         if (!range) { return null; }
         const word = document.getText(range);
@@ -134,75 +149,59 @@ const hoverProvider: vscode.HoverProvider = {
 };
 
 export function activate(context: vscode.ExtensionContext) {
-    // console.log('Pug Support extension activating...');
+    console.log('Pug Support - Advanced extension activating (startup-based detection)...');
 
+    // Check for other Pug formatters and log compatibility info
+    const extensions = vscode.extensions.all;
+    const pugFormatters = extensions.filter(ext => 
+        ext.id.includes('pug') && 
+        ext.id !== 'miral-kashiwagi.pug-support' &&
+        ext.isActive
+    );
+    
+    if (pugFormatters.length > 0) {
+        console.log('Detected other Pug extensions:', pugFormatters.map(ext => ext.id));
+        console.log('Pug Support - Advanced will not register formatting to avoid conflicts');
+    }
 
-    const PUG_MODE: vscode.DocumentFilter = { language: 'pug', scheme: 'file' };
+    // Create multiple document filters for better compatibility
+    const PUG_FILTERS: vscode.DocumentSelector = [
+        { pattern: '**/*.pug', scheme: 'file' },
+        { pattern: '**/*.pug', scheme: 'untitled' },
+        // Fallback: if any existing pug language is registered, use it
+        'pug'
+    ];
 
-    // Enhanced formatting provider
-    // --- PrettierによるPugフォーマット機能（コメントアウト中） ---
-    /*
-    const formattingProvider = {
-        async provideDocumentFormattingEdits(document: vscode.TextDocument): Promise<vscode.TextEdit[]> {
-            const text = document.getText();
-            try {
-                const tabWidth = vscode.workspace.getConfiguration('editor', document.uri).get('tabSize', 2) as number;
-                const useTabs = !(vscode.workspace.getConfiguration('editor', document.uri).get('insertSpaces', true) as boolean);
-
-                const { format } = await import('prettier');
-                const prettierPluginPug = await import('@prettier/plugin-pug');
-                const formattedText = await format(text, {
-                    parser: document.languageId === 'pug' ? 'pug' : document.languageId,
-                    plugins: [prettierPluginPug],
-                    tabWidth: tabWidth,
-                    useTabs: useTabs,
-                    filepath: document.uri.fsPath
-                });
-                const fullRange = new vscode.Range(
-                    document.positionAt(0),
-                    document.positionAt(text.length)
-                );
-                return [vscode.TextEdit.replace(fullRange, formattedText)];
-            } catch (error) {
-                console.error('Error during Pug formatting with prettier.format:', error);
-                vscode.window.showErrorMessage(`Error formatting ${document.languageId.toUpperCase()} document with Prettier: ${error instanceof Error ? error.message : String(error)}`);
-                return [];
-            }
-        }
-    };
-    */
-
-
-    // Register basic providers
-    // context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(PUG_MODE, formattingProvider)); // ← Prettierフォーマット一時無効化
-    context.subscriptions.push(vscode.languages.registerCompletionItemProvider(PUG_MODE, completionProvider, ...['.', '#', ' ']));
-    context.subscriptions.push(vscode.languages.registerHoverProvider(PUG_MODE, hoverProvider));
-
+    // Register providers using multiple document filters for maximum compatibility
     const pugDefinitionProviderInstance = new PugDefinitionProvider();
-    context.subscriptions.push(vscode.languages.registerDefinitionProvider(PUG_MODE, pugDefinitionProviderInstance));
+    registeredProviders.push(vscode.languages.registerDefinitionProvider(PUG_FILTERS, pugDefinitionProviderInstance));
 
     // Register advanced language features
     const renameProvider = new PugRenameProvider();
-    context.subscriptions.push(vscode.languages.registerRenameProvider(PUG_MODE, renameProvider));
+    registeredProviders.push(vscode.languages.registerRenameProvider(PUG_FILTERS, renameProvider));
 
     // Register NEW basic language features
     const documentSymbolProvider = new PugDocumentSymbolProvider();
-    context.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(PUG_MODE, documentSymbolProvider));
+    registeredProviders.push(vscode.languages.registerDocumentSymbolProvider(PUG_FILTERS, documentSymbolProvider));
 
     const workspaceSymbolProvider = new PugWorkspaceSymbolProvider();
-    context.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(workspaceSymbolProvider));
+    registeredProviders.push(vscode.languages.registerWorkspaceSymbolProvider(workspaceSymbolProvider));
 
     const referenceProvider = new PugReferenceProvider();
-    context.subscriptions.push(vscode.languages.registerReferenceProvider(PUG_MODE, referenceProvider));
+    registeredProviders.push(vscode.languages.registerReferenceProvider(PUG_FILTERS, referenceProvider));
 
     const documentHighlightProvider = new PugDocumentHighlightProvider();
-    context.subscriptions.push(vscode.languages.registerDocumentHighlightProvider(PUG_MODE, documentHighlightProvider));
+    registeredProviders.push(vscode.languages.registerDocumentHighlightProvider(PUG_FILTERS, documentHighlightProvider));
 
     const foldingRangeProvider = new PugFoldingRangeProvider();
-    context.subscriptions.push(vscode.languages.registerFoldingRangeProvider(PUG_MODE, foldingRangeProvider));
+    registeredProviders.push(vscode.languages.registerFoldingRangeProvider(PUG_FILTERS, foldingRangeProvider));
 
     const signatureHelpProvider = new PugSignatureHelpProvider();
-    context.subscriptions.push(vscode.languages.registerSignatureHelpProvider(PUG_MODE, signatureHelpProvider, '(', ','));
+    registeredProviders.push(vscode.languages.registerSignatureHelpProvider(PUG_FILTERS, signatureHelpProvider, '(', ','));
+
+    // Register basic providers with multiple filters
+    registeredProviders.push(vscode.languages.registerCompletionItemProvider(PUG_FILTERS, completionProvider, ...['.', '#', ' ']));
+    registeredProviders.push(vscode.languages.registerHoverProvider(PUG_FILTERS, hoverProvider));
 
     // Initialize file watcher for automatic path updates
     fileWatcher = new PugFileWatcher();
@@ -211,22 +210,38 @@ export function activate(context: vscode.ExtensionContext) {
     // Register diagnostics
     const diagnostics = createIndentationDiagnostics();
     context.subscriptions.push(diagnostics);
-    const updateDiagnostics = (document: vscode.TextDocument) => updateIndentationDiagnostics(document, diagnostics);
-    if (vscode.window.activeTextEditor) {
+    const updateDiagnostics = (document: vscode.TextDocument) => {
+        if (isPugFile(document)) {
+            updateIndentationDiagnostics(document, diagnostics);
+        }
+    };
+    
+    if (vscode.window.activeTextEditor && isPugFile(vscode.window.activeTextEditor.document)) {
         updateDiagnostics(vscode.window.activeTextEditor.document);
     }
+    
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => {
-        if (editor) {
+        if (editor && isPugFile(editor.document)) {
             updateDiagnostics(editor.document);
         }
     }));
-    context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(event => updateDiagnostics(event.document)));
-    context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(doc => diagnostics.delete(doc.uri)));
+    
+    context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(event => {
+        if (isPugFile(event.document)) {
+            updateDiagnostics(event.document);
+        }
+    }));
+    
+    context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(doc => {
+        if (isPugFile(doc)) {
+            diagnostics.delete(doc.uri);
+        }
+    }));
 
-    // Register Paste Provider
+    // Register Paste Provider with multiple filters
     const pasteProvider = new PugPasteProvider();
-    context.subscriptions.push(
-        vscode.languages.registerDocumentPasteEditProvider({ language: 'pug' }, pasteProvider, {
+    registeredProviders.push(
+        vscode.languages.registerDocumentPasteEditProvider(PUG_FILTERS, pasteProvider, {
             pasteMimeTypes: ['text/plain'],
             providedPasteEditKinds: [vscode.DocumentDropOrPasteEditKind.Text]
         })
@@ -244,8 +259,8 @@ export function activate(context: vscode.ExtensionContext) {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
             const document = editor.document;
-            if (document.languageId === 'pug') {
-                const dependencies = await getDirectDependencies(document); // Pass the document object
+            if (isPugFile(document)) {
+                const dependencies = await getDirectDependencies(document);
                 getTodoOutputChannel().clear();
                 getTodoOutputChannel().show(true);
                 getTodoOutputChannel().appendLine(`Direct dependencies for ${vscode.workspace.asRelativePath(document.uri)}:`);
@@ -296,11 +311,18 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
+    // Add all providers to context subscriptions
+    context.subscriptions.push(...registeredProviders);
+    
     context.subscriptions.push(
         findTodosCommand, 
         listFileDependenciesCommand,
         createFromTemplateCommand
     );
+
+    // Log successful activation
+    console.log('Pug Support - Advanced extension activated successfully');
+    console.log(`Registered ${registeredProviders.length} language providers`);
 }
 
 export function deactivate() {
@@ -310,5 +332,8 @@ export function deactivate() {
     if (fileWatcher) {
         fileWatcher.dispose();
     }
+    // Dispose all registered providers
+    registeredProviders.forEach(provider => provider.dispose());
+    registeredProviders = [];
 }
 
