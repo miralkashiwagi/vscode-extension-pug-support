@@ -1,71 +1,47 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { getMixinDefinitions, MixinDefinition } from './mixinIndexer';
+import { resolvePugPath, getAllReferencedFiles } from './pathUtils';
 
 export class PugDefinitionProvider implements vscode.DefinitionProvider {
     private async findMixinDefinitionInIncludedFiles(document: vscode.TextDocument, mixinName: string, searchedFiles: Set<string> = new Set()): Promise<vscode.Location[]> {
         const locations: vscode.Location[] = [];
-        const currentDocText = document.getText();
-        const includeRegex = /^\s*include\s+([^\s]+)/gm;
-        let includeMatch;
-        const dirPath = path.dirname(document.uri.fsPath);
+        searchedFiles.add(document.uri.fsPath);
+        // IncludeとExtendsファイル内で定義されたミックスインを探索
+        // 共通のgetAllReferencedFilesを使用してincludeとextendsファイルを取得
+        const referencedFiles = await getAllReferencedFiles(document);
         const promises: Promise<void>[] = [];
 
-        while ((includeMatch = includeRegex.exec(currentDocText)) !== null) {
-            const includePath = includeMatch[1];
-            let absoluteIncludePath = path.resolve(dirPath, includePath);
-            let finalUri: vscode.Uri | undefined;
-
-            const checkAndSetPath = async (filePath: string) => {
-                try {
-                    const stat = await vscode.workspace.fs.stat(vscode.Uri.file(filePath));
-                    if (stat.type === vscode.FileType.File) {
-                        finalUri = vscode.Uri.file(filePath);
-                        return true;
-                    }
-                } catch { /* file doesn't exist */ }
-                return false;
-            };
-
-            if (!(await checkAndSetPath(absoluteIncludePath))) {
-                if (!(await checkAndSetPath(absoluteIncludePath + '.pug'))) {
-                    continue;
-                }
+        for (const fileUri of referencedFiles) {
+            if (searchedFiles.has(fileUri.fsPath)) {
+                continue;
             }
-
-            if (finalUri) {
-                const includedFileUri = finalUri;
-                if (searchedFiles.has(includedFileUri.fsPath)) {
-                    continue;
-                }
-                searchedFiles.add(includedFileUri.fsPath);
-
-                promises.push(
-                    (async () => {
-                        try {
-                            const includedDoc = await vscode.workspace.openTextDocument(includedFileUri);
-                            const includedText = includedDoc.getText();
-                            const includedDocumentLines = includedText.split(/\r?\n/);
-                            
-                            // Allow leading whitespace for mixin definitions
-                            const mixinDefinitionRegex = new RegExp('^\\s*mixin\\s+' + mixinName + '(?:\\s|\\(|$)');
-                            for (let i = 0; i < includedDocumentLines.length; i++) {
-                                const currentLineText = includedDocumentLines[i];
-                                if (mixinDefinitionRegex.test(currentLineText)) {
-                                    locations.push(new vscode.Location(includedFileUri, new vscode.Position(i, 0)));
-                                }
+            
+            promises.push(
+                (async () => {
+                    try {
+                        const includedDoc = await vscode.workspace.openTextDocument(fileUri);
+                        const includedText = includedDoc.getText();
+                        const includedDocumentLines = includedText.split(/\r?\n/);
+                        
+                        // Allow leading whitespace for mixin definitions
+                        const mixinDefinitionRegex = new RegExp('^\\s*mixin\\s+' + mixinName + '(?:\\s|\\(|$)');
+                        for (let i = 0; i < includedDocumentLines.length; i++) {
+                            const currentLineText = includedDocumentLines[i];
+                            if (mixinDefinitionRegex.test(currentLineText)) {
+                                locations.push(new vscode.Location(fileUri, new vscode.Position(i, 0)));
                             }
-
-                            // Recursively search in further included files
-                            const nestedLocations = await this.findMixinDefinitionInIncludedFiles(includedDoc, mixinName, searchedFiles);
-                            locations.push(...nestedLocations);
-
-                        } catch (e: any) {
-                            console.error(`[PugDefinitionProvider] Error reading or parsing included file ${includedFileUri.fsPath}:`, e);
                         }
-                    })()
-                );
-            }
+
+                        // Recursively search in further included files
+                        const nestedLocations = await this.findMixinDefinitionInIncludedFiles(includedDoc, mixinName, searchedFiles);
+                        locations.push(...nestedLocations);
+
+                    } catch (e: any) {
+                        console.error(`[PugDefinitionProvider] Error reading or parsing included file ${fileUri.fsPath}:`, e);
+                    }
+                })()
+            );
         }
 
         await Promise.all(promises);
@@ -77,10 +53,10 @@ export class PugDefinitionProvider implements vscode.DefinitionProvider {
         const lineText = line.text;
 
         // More flexible include regex that allows for indentation, comments, and quoted paths
-        const includeRegex = /(?:^|\s)include\s+(['"]?)([^'"\s]+)\1/;
+        const includeRegex = /(?:^|\s)include\s+(['"]?)([^'"]+)\1|(?:^|\s)include\s+([^\s]+)/;
         const includeMatch = lineText.match(includeRegex);
         if (includeMatch) {
-            const includedPath = includeMatch[2]; // Now the path is in the second capture group
+            const includedPath = includeMatch[2] || includeMatch[3]; // Path is in group 2 (quoted) or group 3 (unquoted)
             const pathStartIndex = lineText.indexOf(includedPath);
             const pathEndIndex = pathStartIndex + includedPath.length;
             
@@ -90,53 +66,8 @@ export class PugDefinitionProvider implements vscode.DefinitionProvider {
                 position.character >= includeKeywordIndex && 
                 position.character <= lineText.length) {
                 
-                const currentDir = path.dirname(document.uri.fsPath);
-                
-                // Use VSCode API consistently for file system operations
-                let finalUri: vscode.Uri | undefined;
-                
-                // Handle absolute paths (starting with /) as relative to workspace root
-                const pathsToTry: string[] = [];
-                
-                if (includedPath.startsWith('/')) {
-                    // Absolute path - resolve from workspace root
-                    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
-                        const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
-                        const pathWithoutLeadingSlash = includedPath.substring(1);
-                        pathsToTry.push(
-                            path.resolve(workspaceRoot, pathWithoutLeadingSlash),
-                            path.resolve(workspaceRoot, pathWithoutLeadingSlash + '.pug'),
-                            // Also try with 'app' prefix for common Pug project structures
-                            path.resolve(workspaceRoot, 'app', pathWithoutLeadingSlash),
-                            path.resolve(workspaceRoot, 'app', pathWithoutLeadingSlash + '.pug')
-                        );
-                    }
-                } else {
-                    // Relative path - resolve from current directory
-                    const resolvedPath = path.resolve(currentDir, includedPath);
-                    pathsToTry.push(
-                        resolvedPath,
-                        resolvedPath + '.pug',
-                        path.resolve(currentDir, includedPath + '.pug'),
-                        // Try relative to workspace root if available
-                        ...(vscode.workspace.workspaceFolders ? [
-                            path.resolve(vscode.workspace.workspaceFolders[0].uri.fsPath, includedPath),
-                            path.resolve(vscode.workspace.workspaceFolders[0].uri.fsPath, includedPath + '.pug')
-                        ] : [])
-                    );
-                }
-                
-                for (const pathToTry of pathsToTry) {
-                    try {
-                        const stat = await vscode.workspace.fs.stat(vscode.Uri.file(pathToTry));
-                        if (stat.type === vscode.FileType.File) {
-                            finalUri = vscode.Uri.file(pathToTry);
-                            break;
-                        }
-                    } catch {
-                        // Continue to next path
-                    }
-                }
+                // 共通のresolvePugPath関数を使用
+                const finalUri = await resolvePugPath(includedPath, document.uri.fsPath);
                 
                 if (finalUri) {
                     return new vscode.Location(finalUri, new vscode.Position(0, 0));
@@ -145,10 +76,10 @@ export class PugDefinitionProvider implements vscode.DefinitionProvider {
         }
 
         // More flexible extends regex that allows for indentation, comments, and quoted paths
-        const extendsRegex = /(?:^|\s)extends\s+(['"]?)([^'"\s]+)\1/;
+        const extendsRegex = /(?:^|\s)extends\s+(['"]?)([^'"]+)\1|(?:^|\s)extends\s+([^\s]+)/;
         const extendsMatch = lineText.match(extendsRegex);
         if (extendsMatch) {
-            const extendedPath = extendsMatch[2]; // Now the path is in the second capture group
+            const extendedPath = extendsMatch[2] || extendsMatch[3]; // Path is in group 2 (quoted) or group 3 (unquoted)
             const pathStartIndex = lineText.indexOf(extendedPath);
             const pathEndIndex = pathStartIndex + extendedPath.length;
             
@@ -158,53 +89,8 @@ export class PugDefinitionProvider implements vscode.DefinitionProvider {
                 position.character >= extendsKeywordIndex && 
                 position.character <= lineText.length) {
                 
-                const currentDir = path.dirname(document.uri.fsPath);
-                
-                // Use VSCode API consistently for file system operations
-                let finalUri: vscode.Uri | undefined;
-                
-                // Handle absolute paths (starting with /) as relative to workspace root
-                const pathsToTry: string[] = [];
-                
-                if (extendedPath.startsWith('/')) {
-                    // Absolute path - resolve from workspace root
-                    if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
-                        const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
-                        const pathWithoutLeadingSlash = extendedPath.substring(1);
-                        pathsToTry.push(
-                            path.resolve(workspaceRoot, pathWithoutLeadingSlash),
-                            path.resolve(workspaceRoot, pathWithoutLeadingSlash + '.pug'),
-                            // Also try with 'app' prefix for common Pug project structures
-                            path.resolve(workspaceRoot, 'app', pathWithoutLeadingSlash),
-                            path.resolve(workspaceRoot, 'app', pathWithoutLeadingSlash + '.pug')
-                        );
-                    }
-                } else {
-                    // Relative path - resolve from current directory
-                    const resolvedPath = path.resolve(currentDir, extendedPath);
-                    pathsToTry.push(
-                        resolvedPath,
-                        resolvedPath + '.pug',
-                        path.resolve(currentDir, extendedPath + '.pug'),
-                        // Try relative to workspace root if available
-                        ...(vscode.workspace.workspaceFolders ? [
-                            path.resolve(vscode.workspace.workspaceFolders[0].uri.fsPath, extendedPath),
-                            path.resolve(vscode.workspace.workspaceFolders[0].uri.fsPath, extendedPath + '.pug')
-                        ] : [])
-                    );
-                }
-                
-                for (const pathToTry of pathsToTry) {
-                    try {
-                        const stat = await vscode.workspace.fs.stat(vscode.Uri.file(pathToTry));
-                        if (stat.type === vscode.FileType.File) {
-                            finalUri = vscode.Uri.file(pathToTry);
-                            break;
-                        }
-                    } catch {
-                        // Continue to next path
-                    }
-                }
+                // 共通のresolvePugPath関数を使用
+                const finalUri = await resolvePugPath(extendedPath, document.uri.fsPath);
                 
                 if (finalUri) {
                     return new vscode.Location(finalUri, new vscode.Position(0, 0));

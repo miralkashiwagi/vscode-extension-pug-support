@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { getAllReferencedFiles } from './pathUtils';
 
 export class PugSignatureHelpProvider implements vscode.SignatureHelpProvider {
 
@@ -10,14 +11,7 @@ export class PugSignatureHelpProvider implements vscode.SignatureHelpProvider {
         token: vscode.CancellationToken,
         context: vscode.SignatureHelpContext
     ): Promise<vscode.SignatureHelp | undefined> {
-        // デバッグ用ログ出力
         const lineText = document.lineAt(position).text;
-        console.log('[PugSignatureHelpProvider] called', {
-            lineText,
-            position,
-            triggerKind: context.triggerKind,
-            triggerCharacter: context.triggerCharacter
-        });
         
         const currentChar = position.character;
         
@@ -65,10 +59,14 @@ export class PugSignatureHelpProvider implements vscode.SignatureHelpProvider {
     } | null {
         
         // Look for mixin call pattern: +mixinName(
-        const mixinCallPattern = /^\s*\+(\w+)\s*\(/;
+        // \w+ を [\w-]+ に変更してハイフンも含めるようにする
+        const mixinCallPattern = /^\s*\+([\w-]+)\s*\(/;
         const match = lineText.match(mixinCallPattern);
         
+
+        
         if (!match) {
+
             return null;
         }
         
@@ -123,10 +121,10 @@ export class PugSignatureHelpProvider implements vscode.SignatureHelpProvider {
         mixinName: string,
         searchedFiles: Set<string> = new Set()
     ): Promise<{ parameters: string[]; documentation?: string } | null> {
-        console.log('[PugSignatureHelpProvider] findMixinDefinitionRecursive: start', { file: document.uri.fsPath, mixinName });
+
         // 循環参照防止
         if (searchedFiles.has(document.uri.fsPath)) {
-            console.log('[PugSignatureHelpProvider] findMixinDefinitionRecursive: already searched', document.uri.fsPath);
+
             return null;
         }
         searchedFiles.add(document.uri.fsPath);
@@ -134,27 +132,36 @@ export class PugSignatureHelpProvider implements vscode.SignatureHelpProvider {
         // まず現在のファイル内を探索
         const localDefinition = this.findMixinInDocument(document, mixinName);
         if (localDefinition) {
-            console.log('[PugSignatureHelpProvider] findMixinDefinitionRecursive: found in', document.uri.fsPath);
+
             return localDefinition;
         }
 
-        // include先を再帰的に探索
-        const includedFiles = await this.getIncludedFiles(document);
-        for (const fileUri of includedFiles) {
+        // 共通のgetAllReferencedFilesを使用してincludeとextends先を再帰的に探索
+
+        const referencedFiles = await getAllReferencedFiles(document);
+
+        
+        // 参照ファイルが無い場合はログを出力して終了
+        if (referencedFiles.length === 0) {
+
+            return null;
+        }
+        
+        for (const fileUri of referencedFiles) {
             try {
-                console.log('[PugSignatureHelpProvider] findMixinDefinitionRecursive: searching include', fileUri.fsPath);
+
                 const includedDocument = await vscode.workspace.openTextDocument(fileUri);
                 const definition = await this.findMixinDefinitionRecursive(includedDocument, mixinName, searchedFiles);
                 if (definition) {
-                    console.log('[PugSignatureHelpProvider] findMixinDefinitionRecursive: found in include', fileUri.fsPath);
+
                     return definition;
                 }
             } catch (error) {
-                console.log('[PugSignatureHelpProvider] findMixinDefinitionRecursive: failed to open include', fileUri.fsPath, error);
+
                 continue;
             }
         }
-        console.log('[PugSignatureHelpProvider] findMixinDefinitionRecursive: not found in', document.uri.fsPath);
+
         return null;
     }
     
@@ -165,18 +172,22 @@ export class PugSignatureHelpProvider implements vscode.SignatureHelpProvider {
         parameters: string[];
         documentation?: string;
     } | null {
+
+        const documentText = document.getText();
+        const lines = documentText.split(/\r?\n/);
         
-        const text = document.getText();
-        const lines = text.split('\n');
+        // Escape special regex characters in mixinName
+        const escapedMixinName = this.escapeRegExp(mixinName);
+        const mixinDefPattern = `^\\s*mixin\\s+${escapedMixinName}(?:\\s*\\(([^\\)]*)\\)|\\s|$)`;
+        const mixinDefRegex = new RegExp(mixinDefPattern);
+
         
         for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            
-            // Match mixin definition
-            const mixinDefPattern = new RegExp(`^mixin\\s+${this.escapeRegExp(mixinName)}\\s*(?:\\(([^)]*)\\))?`);
-            const match = line.match(mixinDefPattern);
+            const line = lines[i];
+            const match = line.match(mixinDefRegex);
             
             if (match) {
+
                 const parametersString = match[1] || '';
                 const parameters = parametersString
                     .split(',')
@@ -184,57 +195,33 @@ export class PugSignatureHelpProvider implements vscode.SignatureHelpProvider {
                     .filter(p => p.length > 0);
                 
                 // Look for documentation comments above the mixin
-                let documentation = '';
+                const commentsAbove: string[] = [];
                 for (let j = i - 1; j >= 0; j--) {
                     const prevLine = lines[j].trim();
                     if (prevLine.startsWith('//')) {
-                        documentation = prevLine.substring(2).trim() + '\n' + documentation;
+                        commentsAbove.push(prevLine.substring(2).trim());
                     } else if (prevLine === '') {
                         continue;
                     } else {
                         break;
                     }
                 }
+                const documentation = commentsAbove.join('\n');
                 
+
                 return {
                     parameters,
-                    documentation: documentation.trim() || undefined
+                    documentation: documentation
                 };
             }
         }
         
+
         return null;
     }
     
 
-    private async getIncludedFiles(document: vscode.TextDocument): Promise<vscode.Uri[]> {
-        const includedFiles: vscode.Uri[] = [];
-        const text = document.getText();
-        const includeRegex = /^\s*include\s+([^\s]+)/gm;
-        const dirPath = path.dirname(document.uri.fsPath);
-        let match: RegExpExecArray | null;
-        while ((match = includeRegex.exec(text)) !== null) {
-            const includePath = match[1];
-            // パス解決: 現在のファイルのディレクトリ基準
-            let absoluteIncludePath = path.resolve(dirPath, includePath);
-            let triedPaths = [absoluteIncludePath];
-            if (!absoluteIncludePath.endsWith('.pug')) {
-                triedPaths.push(absoluteIncludePath + '.pug');
-            }
-            for (const filePath of triedPaths) {
-                try {
-                    const stat = await vscode.workspace.fs.stat(vscode.Uri.file(filePath));
-                    if (stat.type === vscode.FileType.File) {
-                        includedFiles.push(vscode.Uri.file(filePath));
-                        break;
-                    }
-                } catch {
-                    // ファイルがなければスキップ
-                }
-            }
-        }
-        return includedFiles;
-    }
+    // getIncludedFilesメソッドを削除し、共通の実装を使用
 
 
     
