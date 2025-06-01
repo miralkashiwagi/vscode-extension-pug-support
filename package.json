@@ -6,8 +6,8 @@
     "Programming Languages",
     "Other"
   ],
-  "description": "Advanced Pug language features (Go to Definition, References, Rename, etc.) using extension-based detection - No language conflicts",
-  "version": "0.3.0",
+  "description": "Pug language features (Go to Definition, References, etc.)",
+  "version": "0.3.1",
   "engines": {
     "vscode": "^1.92.0"
   },
