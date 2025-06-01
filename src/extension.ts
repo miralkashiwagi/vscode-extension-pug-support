@@ -2,20 +2,12 @@ import * as vscode from 'vscode';
 import { PugDefinitionProvider } from './definitionProvider';
 import { completionProvider } from './completionProvider';
 import { createIndentationDiagnostics, updateIndentationDiagnostics } from './indentationDiagnostics';
-// import { findTodosInWorkspace } from './todoIndexer';
-// import { getDirectDependencies } from './PugDependencyResolver';
 import { PugPasteHandler } from './pasteProvider';
 import { activateMixinIndexer } from './mixinIndexer';
-// import { PugRenameProvider } from './pugRenameProvider';
-// import { PugFileWatcher } from './pugFileWatcher';
 import { PugDocumentSymbolProvider, PugWorkspaceSymbolProvider } from './pugSymbolProvider';
-// import { PugReferenceProvider } from './pugReferenceProvider';
-// import { PugDocumentHighlightProvider } from './pugHighlightProvider';
-// import { PugFoldingRangeProvider } from './pugFoldingProvider';
 import { PugSignatureHelpProvider } from './pugSignatureHelpProvider';
 
 // Global instances for cleanup
-// let fileWatcher: PugFileWatcher | undefined;
 let registeredProviders: vscode.Disposable[] = [];
 
 // Pug file detection utility

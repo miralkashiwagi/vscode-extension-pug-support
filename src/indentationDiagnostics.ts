@@ -42,7 +42,7 @@ export function updateIndentationDiagnostics(document: vscode.TextDocument, diag
                 if (lastRange) {
                     diags.push(new vscode.Diagnostic(
                         lastRange,
-                        'Mixed tabs and spaces in indentation (JetBrains-style validation)',
+                        'Mixed tabs and spaces in indentation (Pug Support extension)',
                         vscode.DiagnosticSeverity.Warning
                     ));
                 }
@@ -53,7 +53,7 @@ export function updateIndentationDiagnostics(document: vscode.TextDocument, diag
                 );
                 diags.push(new vscode.Diagnostic(
                     currentRange,
-                    'Mixed tabs and spaces in indentation (JetBrains-style validation)',
+                    'Mixed tabs and spaces in indentation (Pug Support extension)',
                     vscode.DiagnosticSeverity.Warning
                 ));
                 
