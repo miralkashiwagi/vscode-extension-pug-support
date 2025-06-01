@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { getAllReferencedFiles } from './pathUtils';
 
 // JetBrains IDEと同じロジック: script/styleタグでクラス補完を制限
 function shouldProhibitClassCompletion(document: vscode.TextDocument, position: vscode.Position): boolean {
@@ -13,9 +14,10 @@ function shouldProhibitClassCompletion(document: vscode.TextDocument, position: 
     return false;
 }
 
-// ドキュメント内のmixinを取得
+// 単一ドキュメント内のmixinを取得
 function getMixinCompletions(document: vscode.TextDocument): vscode.CompletionItem[] {
     const text = document.getText();
+    // ハイフンを含むmixin名に対応
     const mixinRegex = /^\s*mixin\s+([a-zA-Z][a-zA-Z0-9_-]*)\s*(\([^)]*\))?/gm;
     const mixins: vscode.CompletionItem[] = [];
     let match;
@@ -36,10 +38,54 @@ function getMixinCompletions(document: vscode.TextDocument): vscode.CompletionIt
             };
         }
         
+        // 重複防止のためにmixinNameをキーとして使用
+        item.sortText = mixinName;
         mixins.push(item);
     }
 
     return mixins;
+}
+
+// 再帰的にすべての参照ファイルからmixinを収集
+async function getMixinsFromAllFiles(
+    document: vscode.TextDocument, 
+    searchedFiles: Set<string> = new Set<string>()
+): Promise<vscode.CompletionItem[]> {
+    // 循環参照防止
+    if (searchedFiles.has(document.uri.fsPath)) {
+        return [];
+    }
+    searchedFiles.add(document.uri.fsPath);
+    
+    // 現在のファイルからmixinを取得
+    const localMixins = getMixinCompletions(document);
+    
+    // 参照されるファイル（includeとextends）を取得
+    const referencedFiles = await getAllReferencedFiles(document);
+    const allMixins = [...localMixins];
+    const mixinNames = new Set<string>(localMixins.map(item => item.label.toString()));
+    
+    // 参照ファイルから再帰的にmixinを収集
+    for (const fileUri of referencedFiles) {
+        try {
+            const referencedDoc = await vscode.workspace.openTextDocument(fileUri);
+            const referencedMixins = await getMixinsFromAllFiles(referencedDoc, searchedFiles);
+            
+            // 重複を避けて追加
+            for (const mixin of referencedMixins) {
+                const mixinName = mixin.label.toString();
+                if (!mixinNames.has(mixinName)) {
+                    mixinNames.add(mixinName);
+                    allMixins.push(mixin);
+                }
+            }
+        } catch (error) {
+            // エラーハンドリング - ファイルが開けない場合はスキップ
+            continue;
+        }
+    }
+    
+    return allMixins;
 }
 
 export const completionProvider: vscode.CompletionItemProvider = {
@@ -122,9 +168,9 @@ export const completionProvider: vscode.CompletionItemProvider = {
             });
         }
 
-        // Mixin補完
+        // Mixin補完 - include/extendsで参照されるファイルからも収集
         if (linePrefix.match(/^\s*\+/)) {
-            return getMixinCompletions(document);
+            return getMixinsFromAllFiles(document);
         }
 
         return [];
