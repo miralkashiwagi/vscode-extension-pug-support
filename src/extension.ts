@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { PugDefinitionProvider } from './definitionProvider';
 import { completionProvider } from './completionProvider';
 import { createIndentationDiagnostics, updateIndentationDiagnostics } from './indentationDiagnostics';
-import { PugPasteHandler } from './pasteProvider';
+import { PugPasteProvider } from './pasteProvider';
 import { activateMixinIndexer } from './mixinIndexer';
 import { PugDocumentSymbolProvider, PugWorkspaceSymbolProvider } from './pugSymbolProvider';
 import { PugSignatureHelpProvider } from './pugSignatureHelpProvider';
@@ -85,9 +85,12 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }));
 
-    // Register Paste Handler
-    const pasteHandler = new PugPasteHandler();
-    context.subscriptions.push(pasteHandler);
+    // Register Paste Provider
+    const pasteProvider = new PugPasteProvider();
+    context.subscriptions.push(vscode.languages.registerDocumentPasteEditProvider(PUG_FILTERS, pasteProvider, {
+      pasteMimeTypes: ['text/plain'],
+      providedPasteEditKinds: [vscode.DocumentDropOrPasteEditKind.Text]
+    }));
 
     // Activate Mixin Indexer
     activateMixinIndexer(context);
