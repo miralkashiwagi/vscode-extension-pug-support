@@ -9,7 +9,7 @@
   "description": "Pug language features (Go to Definition, References, etc.)",
   "version": "0.3.1",
   "engines": {
-    "vscode": "^1.92.0"
+    "vscode": "^1.99.0"
   },
   "activationEvents": [
     "onStartupFinished"
@@ -57,12 +57,12 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
-    "@types/node": "20.x",
+    "@types/node": "24.x",
     "@types/pug": "^2.0.10",
-    "@types/vscode": "^1.92.0",
+    "@types/vscode": "^1.99.0",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.1",
-    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
     "esbuild": "^0.25.3",
     "eslint": "^9.25.1",
