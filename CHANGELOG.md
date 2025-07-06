@@ -1,9 +1,3 @@
 # Change Log
 
-All notable changes to the "pug-support" extension will be documented in this file.
-
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
-## [Unreleased]
-
-- Initial release
+- 0.4.0 : 整形ペースト機能の実装を変更し標準のペースト機能（Ctrl + V）で整形ペーストされるようにしました。
