@@ -7,7 +7,7 @@
     "Other"
   ],
   "description": "Pug language features (Go to Definition, References, etc.)",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "engines": {
     "vscode": "^1.99.0"
   },
