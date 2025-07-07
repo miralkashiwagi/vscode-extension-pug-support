@@ -7,7 +7,7 @@
     "Other"
   ],
   "description": "Pug language features (Go to Definition, References, etc.)",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "engines": {
     "vscode": "^1.99.0"
   },
@@ -40,6 +40,10 @@
         }
       ]
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/miralkashiwagi/vscode-extension-pug-support.git"
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

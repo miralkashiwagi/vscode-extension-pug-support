@@ -61,3 +61,6 @@
 *   **JetBrains IDE**（WebStorm、IntelliJ IDEAなど）の優れたPug対応機能を参考にしています。
 *   Pug.jsチームが提供している**`pug-lexer`**と**`pug-parser`**ライブラリを利用しています。
 *   **VS Codeチーム**の提供する拡張機能開発用APIとドキュメントに感謝します。
+
+# Lisence
+This project is licensed under the MIT License, see the LICENSE file for details
