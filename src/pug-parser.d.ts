@@ -160,4 +160,5 @@ declare module 'pug-parser' {
     export type Node = PugNode;
     export type Mixin = PugMixinNode;
     export type Block = PugBlockNode;
+    export type Code = PugCodeNode;
 }

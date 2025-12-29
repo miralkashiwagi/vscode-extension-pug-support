@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { PugDefinitionProvider } from './definitionProvider';
 import { completionProvider } from './completionProvider';
 import { createIndentationDiagnostics, updateIndentationDiagnostics } from './indentationDiagnostics';
+import { createPugSyntaxDiagnostics, updatePugSyntaxDiagnostics } from './pugSyntaxDiagnostics';
 import { PugPasteProvider } from './pasteProvider';
 import { PugPasteHandler } from './pasteProviderOld';
 import { activateMixinIndexer } from './mixinIndexer';
@@ -56,12 +57,28 @@ export function activate(context: vscode.ExtensionContext) {
 
 
     // Register diagnostics
-    const diagnostics = createIndentationDiagnostics();
-    context.subscriptions.push(diagnostics);
+    const indentationDiagnostics = createIndentationDiagnostics();
+    const pugSyntaxDiagnostics = createPugSyntaxDiagnostics();
+    context.subscriptions.push(indentationDiagnostics, pugSyntaxDiagnostics);
+
+    const diagnosticTimeout: Map<string, NodeJS.Timeout> = new Map();
+
     const updateDiagnostics = (document: vscode.TextDocument) => {
-        if (isPugFile(document)) {
-            updateIndentationDiagnostics(document, diagnostics);
+        if (!isPugFile(document)) { return; }
+
+        const uri = document.uri.toString();
+        const existingTimeout = diagnosticTimeout.get(uri);
+        if (existingTimeout) {
+            clearTimeout(existingTimeout);
         }
+
+        const timeout = setTimeout(() => {
+            updateIndentationDiagnostics(document, indentationDiagnostics);
+            updatePugSyntaxDiagnostics(document, pugSyntaxDiagnostics);
+            diagnosticTimeout.delete(uri);
+        }, 500); // 500ms debounce
+        
+        diagnosticTimeout.set(uri, timeout);
     };
     
     if (vscode.window.activeTextEditor && isPugFile(vscode.window.activeTextEditor.document)) {
@@ -82,7 +99,14 @@ export function activate(context: vscode.ExtensionContext) {
     
     context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(doc => {
         if (isPugFile(doc)) {
-            diagnostics.delete(doc.uri);
+            const uri = doc.uri.toString();
+            const timeout = diagnosticTimeout.get(uri);
+            if (timeout) {
+                clearTimeout(timeout);
+                diagnosticTimeout.delete(uri);
+            }
+            indentationDiagnostics.delete(doc.uri);
+            pugSyntaxDiagnostics.delete(doc.uri);
         }
     }));
 
