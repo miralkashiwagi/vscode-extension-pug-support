@@ -32,14 +32,15 @@ export class PugPasteProvider implements vscode.DocumentPasteEditProvider {
       let isPipedContext = false;
 
       // パイプ記法のコンテキストかどうかチェック
-      const pipeMatch = /\|\s*$/.exec(trimmedTextBeforeCursor);
+      // カーソルの直前に `|` または `| ` がある場合に限定
+      const pipeMatch = /\| ?$/.exec(textBeforeCursorOnLine);
       if (pipeMatch) {
         isPipedContext = true;
         baseIndent = textBeforeCursorOnLine.substring(
           0,
           textBeforeCursorOnLine.lastIndexOf("|") + 1
         );
-        prefixForPipedText = " ";
+        prefixForPipedText = textBeforeCursorOnLine.endsWith("| ") ? "" : " ";
       }
 
       // テキストのインデントを正規化
@@ -56,7 +57,7 @@ export class PugPasteProvider implements vscode.DocumentPasteEditProvider {
       } else {
         resultText = (isPipedContext ? prefixForPipedText : "") + lines[0];
         for (let i = 1; i < lines.length; i++) {
-          resultText += "\n" + (isPipedContext ? "|" + prefixForPipedText : "|") + lines[i];
+          resultText += "\n" + (isPipedContext ? "| " : "") + lines[i];
         }
       }
 
