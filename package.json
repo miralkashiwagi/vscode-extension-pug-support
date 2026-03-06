@@ -20,6 +20,10 @@
       {
         "command": "pug.pasteWithFormatting",
         "title": "Paste with Pug Formatting"
+      },
+      {
+        "command": "pug.pasteWithBr",
+        "title": "Paste with Pug Pipe and br"
       }
     ],
     "keybindings": [
@@ -27,6 +31,12 @@
         "command": "pug.pasteWithFormatting",
         "key": "ctrl+shift+v",
         "mac": "cmd+shift+v",
+        "when": "editorTextFocus && resourceExtname == .pug"
+      },
+      {
+        "command": "pug.pasteWithBr",
+        "key": "ctrl+alt+v",
+        "mac": "cmd+alt+v",
         "when": "editorTextFocus && resourceExtname == .pug"
       }
     ],
@@ -36,7 +46,12 @@
         {
           "command": "pug.pasteWithFormatting",
           "when": "resourceExtname == .pug",
-          "group": "9_cutcopypaste"
+          "group": "9_cutcopypaste@1"
+        },
+        {
+          "command": "pug.pasteWithBr",
+          "when": "resourceExtname == .pug",
+          "group": "9_cutcopypaste@2"
         }
       ]
     }

@@ -7,16 +7,23 @@ export class PugPasteHandler {
 
   constructor() {
     // カスタムペーストコマンドを登録
-    const command = vscode.commands.registerTextEditorCommand(
+    const commandFormatting = vscode.commands.registerTextEditorCommand(
       'pug.pasteWithFormatting',
-      this.handlePasteWithFormatting.bind(this)
+      (textEditor, edit) => this.handlePasteWithFormatting(textEditor, edit, false)
     );
-    this.disposables.push(command);
+    this.disposables.push(commandFormatting);
+
+    const commandBr = vscode.commands.registerTextEditorCommand(
+      'pug.pasteWithBr',
+      (textEditor, edit) => this.handlePasteWithFormatting(textEditor, edit, true)
+    );
+    this.disposables.push(commandBr);
   }
 
   private async handlePasteWithFormatting(
     textEditor: vscode.TextEditor,
-    edit: vscode.TextEditorEdit
+    edit: vscode.TextEditorEdit,
+    useBrForEmptyLines: boolean = false
   ) {
     try {
       // クリップボードからテキストを取得
@@ -80,7 +87,14 @@ export class PugPasteHandler {
       } else {
         resultText = prefixForPipedText + lines[0];
         for (let i = 1; i < lines.length; i++) {
-          resultText += "\n" + baseIndent + "|" + prefixForPipedText + lines[i];
+          if (useBrForEmptyLines) {
+            resultText += "\n" + baseIndent + "br";
+            if (lines[i].trim() !== "") {
+              resultText += "\n" + baseIndent + "|" + (prefixForPipedText || " ") + lines[i];
+            }
+          } else {
+            resultText += "\n" + baseIndent + "|" + (prefixForPipedText || " ") + lines[i];
+          }
         }
       }
 

@@ -57,7 +57,11 @@ export class PugPasteProvider implements vscode.DocumentPasteEditProvider {
       } else {
         resultText = (isPipedContext ? prefixForPipedText : "") + lines[0];
         for (let i = 1; i < lines.length; i++) {
-          resultText += "\n" + (isPipedContext ? "| " : "") + lines[i];
+          if (isPipedContext) {
+            resultText += "\n" + baseIndent + (prefixForPipedText || " ") + lines[i];
+          } else {
+            resultText += "\n" + lines[i];
+          }
         }
       }
 
@@ -71,6 +75,25 @@ export class PugPasteProvider implements vscode.DocumentPasteEditProvider {
         vscode.DocumentDropOrPasteEditKind.Text
       );
       edits.push(pasteEdit);
+
+      // パイプコンテキストの場合、brに変換するバリエーションも提供
+      if (isPipedContext) {
+        let resultTextBr = (isPipedContext ? prefixForPipedText : "") + lines[0];
+        for (let i = 1; i < lines.length; i++) {
+          const currentBaseIndent = baseIndent.substring(0, baseIndent.lastIndexOf("|"));
+          resultTextBr += "\n" + currentBaseIndent + "br";
+          if (lines[i].trim() !== "") {
+            resultTextBr += "\n" + baseIndent + (prefixForPipedText || " ") + lines[i];
+          }
+        }
+
+        const brPasteEdit = new vscode.DocumentPasteEdit(
+          resultTextBr,
+          "Paste with Pug Pipe and br",
+          vscode.DocumentDropOrPasteEditKind.Text.append("pug.br")
+        );
+        edits.push(brPasteEdit);
+      }
     }
     return edits;
   }
