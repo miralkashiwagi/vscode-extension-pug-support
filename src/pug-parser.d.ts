@@ -99,6 +99,7 @@ declare module 'pug-parser' {
         val: string;
         buffer: boolean; // Output the result of evaluation
         mustEscape: boolean;
+        block?: PugBlockNode;
     }
     
     export interface PugFilterNode extends PugBaseNode {

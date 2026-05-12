@@ -51,7 +51,7 @@ function validateJsInAst(node: PugNode, diags: vscode.Diagnostic[], document?: v
     if (node.type === 'Code') {
         const codeNode = node as PugCodeNode;
         try {
-            acorn.parse(codeNode.val, { ecmaVersion: 2020, allowReturnOutsideFunction: true });
+            acorn.parse(getCodeValidationSource(codeNode), { ecmaVersion: 2020, allowReturnOutsideFunction: true });
         } catch (e: any) {
             addJsDiagnostic(codeNode, e, diags, document);
         }
@@ -85,6 +85,36 @@ function validateJsInAst(node: PugNode, diags: vscode.Diagnostic[], document?: v
             validateJsInAst(childNode, diags, document);
         }
     }
+}
+
+function getCodeValidationSource(codeNode: PugCodeNode): string {
+    if (!codeNode.block) {
+        return codeNode.val;
+    }
+
+    const code = codeNode.val.trim();
+
+    if (/^else\b/.test(code)) {
+        return `if (true) {} ${code} {}`;
+    }
+
+    if (/^try\b/.test(code)) {
+        return `${code} {} catch (error) {}`;
+    }
+
+    if (/^catch\b/.test(code)) {
+        return `try {} ${code} {}`;
+    }
+
+    if (/^finally\b/.test(code)) {
+        return `try {} ${code} {}`;
+    }
+
+    if (/^(if|for|while|with|switch)\b/.test(code)) {
+        return `${code} {}`;
+    }
+
+    return codeNode.val;
 }
 
 function addJsDiagnostic(node: any, error: any, diags: vscode.Diagnostic[], document?: vscode.TextDocument): void {
