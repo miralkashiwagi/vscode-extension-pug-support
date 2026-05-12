@@ -58,7 +58,7 @@ export class PugPasteProvider implements vscode.DocumentPasteEditProvider {
         resultText = (isPipedContext ? prefixForPipedText : "") + lines[0];
         for (let i = 1; i < lines.length; i++) {
           if (isPipedContext) {
-            resultText += "\n" + baseIndent + (prefixForPipedText || " ") + lines[i];
+            resultText += "\n" + baseIndent + prefixForPipedText + lines[i];
           } else {
             resultText += "\n" + lines[i];
           }
@@ -83,7 +83,7 @@ export class PugPasteProvider implements vscode.DocumentPasteEditProvider {
           const currentBaseIndent = baseIndent.substring(0, baseIndent.lastIndexOf("|"));
           resultTextBr += "\n" + currentBaseIndent + "br";
           if (lines[i].trim() !== "") {
-            resultTextBr += "\n" + baseIndent + (prefixForPipedText || " ") + lines[i];
+            resultTextBr += "\n" + baseIndent + prefixForPipedText + lines[i];
           }
         }
 

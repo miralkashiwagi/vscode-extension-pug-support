@@ -51,10 +51,9 @@ export class PugPasteHandler {
         0,
         selection.start.character
       );
-      const trimmedTextBeforeCursor = textBeforeCursorOnLine.trimRight();
 
       // パイプ記法のコンテキストかどうかチェック
-      const pipeMatch = /\|\s*$/.exec(trimmedTextBeforeCursor);
+      const pipeMatch = /\| ?$/.exec(textBeforeCursorOnLine);
       
       // パイプコンテキストでない場合は、通常のテキスト挿入
       if (!pipeMatch) {
@@ -71,7 +70,7 @@ export class PugPasteHandler {
         lineAtCursor.firstNonWhitespaceCharacterIndex
       );
 
-      const prefixForPipedText = " ";
+      const prefixForPipedText = textBeforeCursorOnLine.endsWith("| ") ? "" : " ";
 
       // テキストのインデントを正規化
       const normalizedPastedText = this.normalizeIndent(
@@ -90,10 +89,10 @@ export class PugPasteHandler {
           if (useBrForEmptyLines) {
             resultText += "\n" + baseIndent + "br";
             if (lines[i].trim() !== "") {
-              resultText += "\n" + baseIndent + "|" + (prefixForPipedText || " ") + lines[i];
+              resultText += "\n" + baseIndent + "|" + prefixForPipedText + lines[i];
             }
           } else {
-            resultText += "\n" + baseIndent + "|" + (prefixForPipedText || " ") + lines[i];
+            resultText += "\n" + baseIndent + "|" + prefixForPipedText + lines[i];
           }
         }
       }
