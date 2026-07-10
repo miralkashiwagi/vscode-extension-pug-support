@@ -111,11 +111,15 @@ export function activate(context: vscode.ExtensionContext) {
     }));
 
     // Register Paste Provider
-    const pasteProvider = new PugPasteProvider();
-    context.subscriptions.push(vscode.languages.registerDocumentPasteEditProvider(PUG_FILTERS, pasteProvider, {
-      pasteMimeTypes: ['text/plain'],
-      providedPasteEditKinds: [vscode.DocumentDropOrPasteEditKind.Text]
-    }));
+    try {
+        const pasteProvider = new PugPasteProvider();
+        context.subscriptions.push(vscode.languages.registerDocumentPasteEditProvider(PUG_FILTERS, pasteProvider, {
+          pasteMimeTypes: ['text/plain'],
+          providedPasteEditKinds: [vscode.DocumentDropOrPasteEditKind.Text]
+        }));
+    } catch (error) {
+        console.warn('Pug Support - DocumentPasteEditProvider registration failed; fallback paste commands remain available.', error);
+    }
     
     // Register Paste Handler
     const pasteHandler = new PugPasteHandler();
